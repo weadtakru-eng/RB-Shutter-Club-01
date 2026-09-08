@@ -41,7 +41,7 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
             className="flex items-center gap-1.5 text-gray-700 hover:text-black text-xs font-bold"
           >
             <span className="material-symbols-outlined text-[20px]">arrow_back</span>
-            <span>Gallery</span>
+            <span>แกลเลอรี</span>
           </button>
           <div className="flex items-center gap-2">
             <button
@@ -76,7 +76,7 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
           {photo.isMentorPick && (
             <div className="absolute top-3 left-3 bg-purple-700 text-white text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-md">
               <span className="material-symbols-outlined text-[14px]">star</span>
-              <span>Mentor Pick</span>
+              <span>ภาพเด่นเมนเทอร์</span>
             </div>
           )}
           <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white text-[10px] font-mono px-2.5 py-1 rounded-full border border-white/10">
@@ -103,7 +103,7 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
                 )}
               </div>
               <span className="text-xs text-gray-500">
-                {photo.authorGrade} • Level 3 Amateur Shutter
+                {photo.authorGrade} • เลเวล 3 ช่างภาพมือสมัครเล่น
               </span>
             </div>
           </div>
@@ -118,7 +118,7 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
                 : 'bg-purple-700 text-white hover:bg-purple-800'
             }`}
           >
-            {isFollowing ? 'Following' : '+ Follow'}
+            {isFollowing ? 'กำลังติดตาม' : '+ ติดตาม'}
           </button>
         </div>
 
@@ -137,11 +137,11 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
               >
                 favorite
               </span>
-              <span>{photo.likes} Likes</span>
+              <span>{photo.likes} ถูกใจ</span>
             </button>
             <div className="flex items-center gap-1.5 text-gray-600">
               <span className="material-symbols-outlined text-[20px]">chat_bubble</span>
-              <span>{photo.commentsCount} Critiques</span>
+              <span>{photo.commentsCount} คำวิจารณ์</span>
             </div>
           </div>
           <button
@@ -149,7 +149,7 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
             className="flex items-center gap-1 text-purple-700 hover:text-purple-900 bg-purple-50 px-2.5 py-1 rounded-full"
           >
             <span className="material-symbols-outlined text-[16px]">stars</span>
-            <span>Award Tip</span>
+            <span>ให้รางวัลเพื่อน</span>
           </button>
         </div>
 
@@ -164,7 +164,7 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
             <h2 className="text-lg font-black text-gray-900 mt-1">{photo.title}</h2>
             <p className="text-xs text-gray-600 leading-relaxed mt-1">
               {photo.visualStory ||
-                'Caught this natural candid during afternoon break by the library lockers. The contrast of the natural morning sunlight against the blue denim jacket really made the colors pop without needing heavy post-processing.'}
+                'บันทึกภาพแคนดิดระหว่างพักเบรกข้างตู้ล็อกเกอร์หน้าห้องสมุด แสงแดดยามบ่ายส่องกระทบเสื้อยีนส์สีน้ำเงินเข้ม ขับคู่สีให้โดดเด่นตัดกับความเบลอของฉากหลัง'}
             </p>
           </div>
 
@@ -172,14 +172,14 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
           <div className="bg-purple-50/70 border border-purple-100 rounded-2xl p-3.5 flex flex-col gap-1.5">
             <div className="flex items-center gap-1.5 text-purple-900 font-bold text-xs">
               <span className="material-symbols-outlined text-[18px]">lightbulb</span>
-              <span>Rule of Thirds & Color Balance</span>
+              <span>กฎสามส่วน & การจัดสมดุลสีสัน</span>
             </div>
             <p className="text-[11px] text-gray-700 leading-relaxed">
               {photo.techniqueTip?.content ||
-                'Try placing your subject slightly off-center along the vertical grid intersection lines to create a more dynamic composition. Notice how Praew allowed negative space on the left, giving the subject\'s gaze room to breathe while the rich blue hue anchors the primary visual weight.'}
+                'ลองจัดวางตัวแบบให้อยู่เยื้องออกจากจุดกึ่งกลางตามเส้นตัดแนวดิ่ง เพื่อสร้างการเคลื่อนไหวในภาพ สังเกตการเว้นที่ว่างฝั่งซ้ายเพื่อให้สายตามีพื้นที่หายใจ ขณะที่โทนสีน้ำเงินช่วยยึดน้ำหนักทางสายตาได้อย่างลงตัว'}
             </p>
             <span className="text-[10px] text-purple-700 font-medium italic pt-1">
-              {photo.techniqueTip?.curator || 'Curated by Mentor Maya (Photo Lead) • XP Certified'}
+              {photo.techniqueTip?.curator || 'คัดเลือกโดยพี่เมย์ (เมนเทอร์ฝ่ายภาพ) • ผ่านการรับรอง XP'}
             </span>
           </div>
 
@@ -189,23 +189,23 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
               <span className="material-symbols-outlined text-[18px] text-gray-500">
                 camera
               </span>
-              <span>Camera & EXIF Details</span>
+              <span>ข้อมูลกล้อง & ค่า EXIF</span>
             </h3>
             <div className="grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded-2xl border border-gray-100 text-xs">
               <div className="flex flex-col">
-                <span className="text-[10px] text-gray-400">Camera Body</span>
+                <span className="text-[10px] text-gray-400">ตัวกล้อง</span>
                 <span className="font-semibold text-gray-800">{photo.exif.camera}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] text-gray-400">Lens</span>
+                <span className="text-[10px] text-gray-400">เลนส์</span>
                 <span className="font-semibold text-gray-800">{photo.exif.lens}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] text-gray-400">Aperture</span>
+                <span className="text-[10px] text-gray-400">รูรับแสง</span>
                 <span className="font-semibold text-gray-800">{photo.exif.aperture}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] text-gray-400">Shutter Speed</span>
+                <span className="text-[10px] text-gray-400">ความเร็วชัตเตอร์</span>
                 <span className="font-semibold text-gray-800">{photo.exif.shutterSpeed}</span>
               </div>
               <div className="flex flex-col">
@@ -213,7 +213,7 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
                 <span className="font-semibold text-gray-800">{photo.exif.iso}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] text-gray-400">Focal Length</span>
+                <span className="text-[10px] text-gray-400">ทางยาวโฟกัส</span>
                 <span className="font-semibold text-gray-800">{photo.exif.focalLength}</span>
               </div>
             </div>
@@ -222,9 +222,9 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
           {/* Critiques Thread */}
           <div className="flex flex-col gap-3 pt-2">
             <h3 className="text-xs font-bold text-gray-900 flex items-center justify-between">
-              <span>Club Critiques & Insights</span>
+              <span>คำวิจารณ์และมุมมองจากเพื่อนชมรม</span>
               <span className="text-[11px] text-gray-500 font-normal">
-                {photo.critiques?.length || 0} Comments
+                {photo.critiques?.length || 0} ความคิดเห็น
               </span>
             </h3>
 
@@ -255,7 +255,7 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
                 ))
               ) : (
                 <p className="text-xs text-gray-400 italic">
-                  Be the first to share a constructive critique or photography tip!
+                  เป็นคนแรกที่แบ่งปันคำแนะนำและมุมมองเชิงสร้างสรรค์ให้เพื่อน!
                 </p>
               )}
             </div>
@@ -266,14 +266,14 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
                 type="text"
                 value={commentInput}
                 onChange={(e) => setCommentInput(e.target.value)}
-                placeholder="Write a constructive critique or ask a question..."
+                placeholder="เขียนคำแนะนำเชิงสร้างสรรค์ หรือถามเทคนิคถ่ายภาพ..."
                 className="flex-1 bg-gray-100 border border-gray-200 rounded-full px-4 py-2.5 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-600"
               />
               <button
                 type="submit"
                 className="bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs px-4 py-2.5 rounded-full shrink-0 shadow-xs active:scale-95 transition-all"
               >
-                Send
+                ส่ง
               </button>
             </form>
           </div>

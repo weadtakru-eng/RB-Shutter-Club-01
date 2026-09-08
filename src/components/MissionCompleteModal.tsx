@@ -36,7 +36,7 @@ export const MissionCompleteModal: React.FC<MissionCompleteModalProps> = ({
         <div className="relative z-10 px-5 pt-6 pb-3 flex items-center justify-between">
           <span className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wider bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full border border-purple-500/30">
             <span className="material-symbols-outlined text-[14px]">military_tech</span>
-            Challenge Mastered
+            พิชิตภารกิจสำเร็จ
           </span>
           <button
             onClick={onClose}
@@ -49,11 +49,11 @@ export const MissionCompleteModal: React.FC<MissionCompleteModalProps> = ({
         {/* Title & Celebration */}
         <div className="px-5 text-center flex flex-col items-center relative z-10">
           <h2 className="text-2xl font-black text-white tracking-tight flex items-center justify-center gap-1.5">
-            <span>Mission Complete!</span>
+            <span>ภารกิจสำเร็จแล้ว!</span>
             <span className="text-2xl">🎉</span>
           </h2>
           <p className="text-xs text-gray-300 mt-1 max-w-xs leading-relaxed">
-            Outstanding capture! You found vibrant blue tones and maintained impeccable compositional balance.
+            ภาพถ่ายยอดเยี่ยมมาก! บันทึกคู่สีและวางองค์ประกอบได้อย่างสมบูรณ์แบบ
           </p>
         </div>
 
@@ -75,21 +75,21 @@ export const MissionCompleteModal: React.FC<MissionCompleteModalProps> = ({
               >
                 check_circle
               </span>
-              <span>Verified Submission</span>
+              <span>ผลงานได้รับการตรวจสอบแล้ว</span>
             </div>
 
             {/* Bottom Photo Metadata */}
             <div className="absolute bottom-3 inset-x-3 flex items-center justify-between text-white text-xs">
               <div className="flex flex-col">
                 <span className="font-bold text-sm leading-tight text-white drop-shadow">
-                  {submittedPhoto?.title || 'Blue Rhythms by the Lockers'}
+                  {submittedPhoto?.title || 'จังหวะสีน้ำเงินข้างตู้ล็อกเกอร์'}
                 </span>
                 <span className="text-[10px] text-gray-300 font-mono">
                   RAW • f/2.0 • 1/320s • ISO 160
                 </span>
               </div>
               <span className="bg-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                Gr.11
+                ม.5
               </span>
             </div>
           </div>
@@ -100,7 +100,7 @@ export const MissionCompleteModal: React.FC<MissionCompleteModalProps> = ({
           {/* XP Tile & Rank Tile */}
           <div className="grid grid-cols-2 gap-2.5">
             <div className="bg-[#1b1f2e] border border-purple-500/20 p-3 rounded-2xl flex flex-col">
-              <span className="text-[10px] uppercase font-bold text-gray-400">Total XP</span>
+              <span className="text-[10px] uppercase font-bold text-gray-400">XP รวม</span>
               <div className="flex items-baseline gap-1 mt-1">
                 <span className="text-xl font-black text-amber-300">
                   {user.currentXP + 50}
@@ -109,25 +109,25 @@ export const MissionCompleteModal: React.FC<MissionCompleteModalProps> = ({
                   +50
                 </span>
               </div>
-              <span className="text-[10px] text-gray-400 mt-1">This week</span>
+              <span className="text-[10px] text-gray-400 mt-1">สัปดาห์นี้</span>
             </div>
 
             <div className="bg-[#1b1f2e] border border-purple-500/20 p-3 rounded-2xl flex flex-col">
-              <span className="text-[10px] uppercase font-bold text-gray-400">Club Rank</span>
+              <span className="text-[10px] uppercase font-bold text-gray-400">อันดับในชมรม</span>
               <div className="flex items-baseline gap-1 mt-1">
                 <span className="text-xl font-black text-white">#6</span>
                 <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-1.5 py-0.2 rounded-full flex items-center">
-                  <span className="material-symbols-outlined text-[10px]">arrow_upward</span> 1 Up
+                  <span className="material-symbols-outlined text-[10px]">arrow_upward</span> ขยับขึ้น 1
                 </span>
               </div>
-              <span className="text-[10px] text-gray-400 mt-1">Top 15% of Club</span>
+              <span className="text-[10px] text-gray-400 mt-1">ท็อป 15% ของชมรม</span>
             </div>
           </div>
 
           {/* Level Progress */}
           <div className="bg-[#1b1f2e] border border-purple-500/20 p-3 rounded-2xl flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-purple-300">Level 3 Amateur Shutter</span>
+              <span className="font-bold text-purple-300">เลเวล 3 ช่างภาพมือสมัครเล่น</span>
               <span className="font-mono text-gray-400 text-[11px]">730 / 800 XP</span>
             </div>
             <div className="w-full bg-gray-800 h-2.5 rounded-full overflow-hidden">
@@ -137,7 +137,7 @@ export const MissionCompleteModal: React.FC<MissionCompleteModalProps> = ({
               ></div>
             </div>
             <span className="text-[10px] text-gray-400 text-right">
-              Only 70 XP to Level 4 Lens Artisan
+              อีกเพียง 70 XP จะขึ้นเป็น เลเวล 4 นักประดิษฐ์ภาพ
             </span>
           </div>
 
@@ -153,11 +153,11 @@ export const MissionCompleteModal: React.FC<MissionCompleteModalProps> = ({
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-[10px] uppercase font-bold text-purple-300 tracking-wider">
-                New Badge Unlocked
+                ปลดล็อกเหรียญตราใหม่!
               </span>
-              <h4 className="text-xs font-bold text-white truncate">Color Explorer</h4>
+              <h4 className="text-xs font-bold text-white truncate">นักสำรวจสีสัน</h4>
               <p className="text-[11px] text-gray-300 line-clamp-1">
-                Completed 5 Color Hunt challenges (+50 XP Bonus)
+                ทำภารกิจล่าสีสันครบ 5 ครั้ง (+50 XP โบนัส)
               </p>
             </div>
           </div>
@@ -169,10 +169,10 @@ export const MissionCompleteModal: React.FC<MissionCompleteModalProps> = ({
             </div>
             <div className="flex flex-col min-w-0 text-xs">
               <span className="font-bold text-gray-200 text-[11px]">
-                Mentor Maya Sterling (Photo Lead)
+                พี่เมย์ (เมนเทอร์ฝ่ายภาพ)
               </span>
               <p className="text-gray-400 italic text-[11px] mt-0.5 leading-relaxed">
-                "The depth of field separates your friend smoothly from the background hallway blur. Superb composition!"
+                "ระยะชัดตื้นช่วยแยกเพื่อนออกจากฉากหลังทางเดินได้อย่างนุ่มนวล การจัดองค์ประกอบดีเยี่ยมมาก!"
               </p>
             </div>
           </div>
@@ -185,13 +185,13 @@ export const MissionCompleteModal: React.FC<MissionCompleteModalProps> = ({
               onClick={onGoToGallery}
               className="flex-1 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold text-xs transition-colors text-center"
             >
-              View Club Gallery
+              ดูแกลเลอรีชมรม
             </button>
             <button
               onClick={onStartNextChallenge}
               className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white font-bold text-xs shadow-lg active:scale-95 transition-all text-center flex items-center justify-center gap-1"
             >
-              <span>Next: Golden Hour</span>
+              <span>ถัดไป: แสงสีทอง</span>
               <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
             </button>
           </div>
@@ -201,7 +201,7 @@ export const MissionCompleteModal: React.FC<MissionCompleteModalProps> = ({
             className="text-center text-[11px] text-purple-400 hover:text-purple-300 font-semibold py-1 flex items-center justify-center gap-1 transition-colors"
           >
             <span className="material-symbols-outlined text-[14px]">share</span>
-            <span>Share Photo Card</span>
+            <span>แชร์การ์ดความสำเร็จ</span>
           </button>
         </div>
       </div>

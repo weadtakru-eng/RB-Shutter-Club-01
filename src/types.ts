@@ -117,6 +117,9 @@ export interface NotificationItem {
 }
 
 export interface UserProfile {
+  uid?: string;
+  avatarUrl?: string;
+  isLoggedIn?: boolean;
   name: string;
   thaiName: string;
   grade: string;

@@ -63,11 +63,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
         {/* Center Title Hook */}
         <div className="relative z-30 text-center px-4 py-8 max-w-[280px]">
           <span className="text-[11px] font-bold tracking-[0.25em] text-purple-200 uppercase block mb-1">
-            THE FLASH CLUB
+            ชมรมถ่ายภาพราชินีบน
           </span>
           <h1 className="text-3xl font-serif font-medium text-white tracking-normal leading-tight">
-            High School Photography Onboarding
+            ยินดีต้อนรับสู่โลกแห่งภาพถ่าย
           </h1>
+          <p className="text-xs text-purple-200/90 font-sans mt-2">
+            บันทึกความทรงจำ พัฒนามุมมอง และเติบโตไปด้วยกันใน THE FLASH CLUB
+          </p>
         </div>
 
         {/* Collage Card 5: Bottom Left Taking Photo */}
@@ -95,7 +98,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
           onClick={onClose}
           className="w-full py-4 rounded-xl bg-[#cfc3e8] hover:bg-[#d8ceee] text-[#131b3e] font-serif font-bold text-lg tracking-wide shadow-2xl hover:shadow-purple-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
         >
-          <span>Start Your Journey</span>
+          <span>เริ่มต้นการเดินทาง</span>
           <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
         </button>
       </div>

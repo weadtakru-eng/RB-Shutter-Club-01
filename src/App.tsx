@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ActiveTab, PhotoItem, ChallengeItem, UserProfile } from './types';
 import {
   INITIAL_USER,
@@ -6,6 +6,7 @@ import {
   INITIAL_CHALLENGES,
   INITIAL_NOTIFICATIONS,
 } from './data/mockData';
+import { auth, onAuthStateChanged, signOutUser } from './lib/firebase';
 
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
@@ -21,6 +22,7 @@ import { ActivitiesView } from './components/ActivitiesView';
 import { NotificationsView } from './components/NotificationsView';
 import { SettingsView } from './components/SettingsView';
 import { ProfileView } from './components/ProfileView';
+import { LoginModal } from './components/LoginModal';
 import { Toast } from './components/Toast';
 
 export default function App() {
@@ -32,6 +34,7 @@ export default function App() {
 
   // Modals
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isShutterOpen, setIsShutterOpen] = useState(false);
   const [shutterChallengeTitle, setShutterChallengeTitle] = useState('Color Hunt – Blue');
   const [isMissionCompleteOpen, setIsMissionCompleteOpen] = useState(false);
@@ -45,6 +48,56 @@ export default function App() {
     setTimeout(() => {
       setToastMessage(null);
     }, 3000);
+  };
+
+  // Listen to Firebase Auth state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser((prev) => ({
+          ...prev,
+          uid: firebaseUser.uid,
+          name: firebaseUser.displayName || prev.name,
+          thaiName: firebaseUser.displayName || prev.thaiName,
+          email: firebaseUser.email || prev.email,
+          avatarUrl: firebaseUser.photoURL || undefined,
+          isLoggedIn: true,
+        }));
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleLoginSuccess = (googleUser: {
+    displayName: string | null;
+    email: string | null;
+    photoURL: string | null;
+    uid: string;
+  }) => {
+    setUser((prev) => ({
+      ...prev,
+      uid: googleUser.uid,
+      name: googleUser.displayName || prev.name,
+      thaiName: googleUser.displayName || prev.thaiName,
+      email: googleUser.email || prev.email,
+      avatarUrl: googleUser.photoURL || undefined,
+      isLoggedIn: true,
+    }));
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOutUser();
+    } catch (e) {
+      console.error(e);
+    }
+    setUser((prev) => ({
+      ...prev,
+      isLoggedIn: false,
+      avatarUrl: undefined,
+    }));
+    showToast('ออกจากระบบเรียบร้อยแล้ว');
   };
 
   const unreadCount = notifications.filter((n) => n.isUnread).length;
@@ -224,6 +277,7 @@ export default function App() {
           unreadCount={unreadCount}
           user={user}
           onOpenOnboarding={() => setIsOnboardingOpen(true)}
+          onOpenLogin={() => setIsLoginModalOpen(true)}
         />
 
         {/* Dynamic Views Container */}
@@ -281,7 +335,12 @@ export default function App() {
           )}
 
           {currentTab === 'settings' && (
-            <SettingsView user={user} onShowToast={showToast} />
+            <SettingsView
+              user={user}
+              onShowToast={showToast}
+              onOpenLogin={() => setIsLoginModalOpen(true)}
+              onLogout={handleLogout}
+            />
           )}
 
           {currentTab === 'profile' && (
@@ -292,6 +351,8 @@ export default function App() {
               onNavigate={setCurrentTab}
               onUpdateUser={(updated) => setUser((prev) => ({ ...prev, ...updated }))}
               onShowToast={showToast}
+              onOpenLogin={() => setIsLoginModalOpen(true)}
+              onLogout={handleLogout}
             />
           )}
         </main>
@@ -301,6 +362,14 @@ export default function App() {
           currentTab={currentTab}
           onNavigate={setCurrentTab}
           onOpenShutter={() => setIsShutterOpen(true)}
+        />
+
+        {/* Modals & Overlays */}
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+          onLoginSuccess={handleLoginSuccess}
+          onShowToast={showToast}
         />
 
         {/* Modals & Overlays */}

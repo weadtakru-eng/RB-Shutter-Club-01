@@ -9,6 +9,8 @@ interface ProfileViewProps {
   onNavigate: (tab: ActiveTab) => void;
   onUpdateUser: (updated: Partial<UserProfile>) => void;
   onShowToast: (msg: string) => void;
+  onOpenLogin: () => void;
+  onLogout: () => void;
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({
@@ -18,6 +20,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   onNavigate,
   onUpdateUser,
   onShowToast,
+  onOpenLogin,
+  onLogout,
 }) => {
   const [profileSubTab, setProfileSubTab] = useState<'photos' | 'badges' | 'quests'>('photos');
   const [photoFilter, setPhotoFilter] = useState<'all' | 'picks' | 'quests'>('all');
@@ -48,9 +52,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3.5">
             <div className="relative">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-purple-700 to-indigo-600 text-white font-black text-2xl flex items-center justify-center ring-4 ring-purple-100 shadow-md">
-                P
-              </div>
+              {user.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  className="w-16 h-16 rounded-full object-cover ring-4 ring-purple-100 shadow-md"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-purple-700 to-indigo-600 text-white font-black text-2xl flex items-center justify-center ring-4 ring-purple-100 shadow-md">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+              )}
               <span className="absolute -bottom-1 -right-1 bg-amber-400 text-gray-900 font-black text-[10px] px-1.5 py-0.5 rounded-full border-2 border-white shadow-xs">
                 Lv.{user.level}
               </span>
@@ -79,10 +91,60 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           <button
             onClick={() => onNavigate('settings')}
             className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
-            title="Settings"
+            title="การตั้งค่า"
           >
             <span className="material-symbols-outlined text-[20px]">settings</span>
           </button>
+        </div>
+
+        {/* Google Account Status Badge / Quick Login */}
+        <div className="bg-purple-50/70 border border-purple-100 rounded-2xl p-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-white shadow-xs flex items-center justify-center shrink-0 border border-purple-100">
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                />
+              </svg>
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                {user.isLoggedIn ? 'บัญชี Google / Gmail' : 'ระบบยืนยันตัวตน'}
+              </span>
+              <span className="text-xs font-bold text-gray-900 truncate">
+                {user.isLoggedIn ? user.email : 'ยังไม่ได้เชื่อมต่อ Gmail'}
+              </span>
+            </div>
+          </div>
+
+          {user.isLoggedIn ? (
+            <button
+              onClick={onLogout}
+              className="text-[11px] font-bold text-gray-600 hover:text-rose-600 bg-white border border-gray-200 px-2.5 py-1 rounded-xl shrink-0 transition-colors shadow-2xs"
+            >
+              ออกจากระบบ
+            </button>
+          ) : (
+            <button
+              onClick={onOpenLogin}
+              className="text-[11px] font-bold text-purple-700 hover:text-purple-900 bg-white border border-purple-200 px-2.5 py-1 rounded-xl shrink-0 transition-colors shadow-2xs hover:bg-purple-50"
+            >
+              เข้าสู่ระบบ
+            </button>
+          )}
         </div>
 
         {/* Camera Gear Pill */}
@@ -102,14 +164,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             onClick={() => setIsEditModalOpen(true)}
             className="flex-1 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs transition-colors text-center"
           >
-            Edit Profile
+            แก้ไขโปรไฟล์
           </button>
           <button
             onClick={() => onShowToast('สิทธิ์การใช้งาน: ชมรมถ่ายภาพระยองวิทยาคม (Verified)')}
             className="flex-1 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 font-bold text-xs transition-colors text-center flex items-center justify-center gap-1"
           >
             <span className="material-symbols-outlined text-[15px]">badge</span>
-            <span>Access Rights</span>
+            <span>สิทธิ์การใช้งาน</span>
           </button>
         </div>
 
@@ -142,8 +204,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           className="bg-white rounded-2xl p-2.5 border border-gray-100 shadow-xs flex flex-col items-center cursor-pointer hover:border-purple-200 transition-colors"
         >
           <span className="text-sm font-black text-purple-700">#{user.rank}</span>
-          <span className="text-[10px] font-bold text-gray-600 mt-0.5">Rank</span>
-          <span className="text-[8px] text-gray-400">Top 10</span>
+          <span className="text-[10px] font-bold text-gray-600 mt-0.5">อันดับ</span>
+          <span className="text-[8px] text-gray-400">ท็อป 10</span>
         </div>
 
         <div
@@ -152,7 +214,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         >
           <span className="text-sm font-black text-gray-900">{myPhotos.length}</span>
           <span className="text-[10px] font-bold text-gray-600 mt-0.5">ภาพถ่าย</span>
-          <span className="text-[8px] text-emerald-600">Active</span>
+          <span className="text-[8px] text-emerald-600">เผยแพร่</span>
         </div>
 
         <div
@@ -163,7 +225,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             {user.questsCompleted}/{user.questsTotal}
           </span>
           <span className="text-[10px] font-bold text-gray-600 mt-0.5">ภารกิจ</span>
-          <span className="text-[8px] text-purple-600">75% Done</span>
+          <span className="text-[8px] text-purple-600">สำเร็จ 75%</span>
         </div>
 
         <div
@@ -206,7 +268,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               : 'text-gray-500'
           }`}
         >
-          ภารกิจ (Quests)
+          ภารกิจท้าทาย
         </button>
       </div>
 
@@ -233,7 +295,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   : 'bg-white text-gray-600 border border-gray-100'
               }`}
             >
-              Mentor Picks ⭐
+              ภาพเด่นจากเมนเทอร์ ⭐
             </button>
             <button
               onClick={() => setPhotoFilter('quests')}
@@ -264,7 +326,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
                 {photo.isMentorPick && (
                   <span className="absolute top-2 left-2 bg-purple-700 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
-                    Pick
+                    ภาพเด่น
                   </span>
                 )}
 
@@ -313,7 +375,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 </div>
                 <p className="text-[11px] text-gray-500 mt-0.5">{badge.description}</p>
                 <span className="text-[10px] text-emerald-700 font-bold mt-1">
-                  {badge.completedDate || 'Awarded'}
+                  {badge.completedDate || 'ได้รับแล้ว'}
                 </span>
               </div>
             </div>
@@ -322,7 +384,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             onClick={() => onNavigate('achievements')}
             className="w-full py-2.5 rounded-xl bg-purple-50 text-purple-800 font-bold text-xs hover:bg-purple-100 transition-colors"
           >
-            ดูเหรียญรางวัลทั้งหมดใน Hall of Trophies
+            ดูเหรียญรางวัลทั้งหมดในหอเกียรติยศ
           </button>
         </div>
       )}
@@ -333,10 +395,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-xs flex items-center justify-between">
             <div className="flex flex-col">
               <span className="text-[10px] font-bold uppercase text-purple-700">
-                Current Streak
+                ทำภารกิจต่อเนื่อง
               </span>
-              <h4 className="text-base font-black text-gray-900 mt-0.5">7-Day Creative Streak</h4>
-              <p className="text-xs text-gray-500">Term 2 Week 6 active</p>
+              <h4 className="text-base font-black text-gray-900 mt-0.5">ต่อเนื่อง 7 วันแห่งความคิดสร้างสรรค์</h4>
+              <p className="text-xs text-gray-500">ภาคเรียนที่ 2 สัปดาห์ที่ 6</p>
             </div>
             <span
               className="material-symbols-outlined text-amber-500 text-[32px]"

@@ -30,7 +30,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           >
             auto_awesome_mosaic
           </span>
-          <span className="text-[10px] tracking-tight mt-0.5">Home</span>
+          <span className="text-[10px] tracking-tight mt-0.5">หน้าหลัก</span>
         </button>
 
         {/* Tab 2: Activities / Quests */}
@@ -48,14 +48,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           >
             calendar_month
           </span>
-          <span className="text-[10px] tracking-tight mt-0.5">Events</span>
+          <span className="text-[10px] tracking-tight mt-0.5">กิจกรรม</span>
         </button>
 
         {/* Center: Floating Shutter Capture Trigger */}
         <div className="relative flex items-center justify-center w-14">
           <button
             onClick={onOpenShutter}
-            aria-label="Capture and Submit Photo"
+            aria-label="ถ่ายภาพและส่งผลงาน"
             className="absolute -top-5 flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-tr from-purple-700 to-indigo-500 text-white shadow-[0_8px_24px_rgba(107,56,212,0.42)] active:scale-90 transition-transform ring-4 ring-white"
           >
             <span className="material-symbols-outlined text-[28px]">photo_camera</span>
@@ -77,7 +77,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           >
             perm_media
           </span>
-          <span className="text-[10px] tracking-tight mt-0.5">Gallery</span>
+          <span className="text-[10px] tracking-tight mt-0.5">แกลเลอรี</span>
         </button>
 
         {/* Tab 4: Profile */}
@@ -95,7 +95,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           >
             person
           </span>
-          <span className="text-[10px] tracking-tight mt-0.5">Profile</span>
+          <span className="text-[10px] tracking-tight mt-0.5">โปรไฟล์</span>
         </button>
       </div>
     </nav>

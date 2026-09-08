@@ -17,20 +17,20 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
   const samplePhotos = [
     {
       url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA0p1CMhk2ZCP8SDqMEvZXqvLeXxu_RNWvVa3GaLllPv0RBfAmH4RLkp4tJjtJtsb3gBXEbSzzRgPisusYn2JpzhsO3iPmFgMtirMv9-3G0me2IrAoWY6bCSnhDE0xv_oRVcSjGiUOm1gkXyoGzePPjDfwCixZxOvD6rV73HJmSUY7YU7JNwodVcQ2Bw911vLyEtP8ETVy31iSkz94UDO-Bs54p4JQpwAGBqTE0E9GcBBhb25_T-cO7',
-      title: 'Blue Rhythms by the Lockers',
-      colorMatch: 'True Blue 92%',
+      title: 'จังหวะสีน้ำเงินข้างตู้ล็อกเกอร์',
+      colorMatch: 'คู่สีตรงโจทย์น้ำเงิน 92%',
       exif: 'f/2.0 • 1/320s • ISO 160',
     },
     {
       url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDKqS4ceHsD4MlaFuGeeFe7LFV4B1do5a2WE0RHLk_x0JhuFsRx85KCX2KdOE-t9-R9RQPtAmEgAdw4kX2-raTo3LiG_3anLG8nEsDUBvwTwh-5z9d7xCUs-CzXJE-fP7_SLsTfXDBUiCs5PAvghzMt3Gzco50gzD4adseXckiN5dmcKxmN-rJccuL7eLspEtbrMkymXzQLaTFljkIWbtpJeLMWX1TwQEBiRtO5YO6o-81ZieKlegGE',
-      title: 'Pastel Locker Symmetry',
-      colorMatch: 'Cobalt Harmony 88%',
+      title: 'ความสมมาตรล็อกเกอร์พาสเทล',
+      colorMatch: 'ความกลมกลืนโคบอลต์ 88%',
       exif: 'f/2.8 • 1/250s • ISO 200',
     },
     {
       url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBmHihlHKQrIc1OUgOzoMy1PtZz6R8IPe-exHc84gfjZWNjRErDrdCt0PYNQJPVLDqZnfy5vBVjMzITevYYYXsHyy0f1HoKlrp0vmWVKW_562fBBAN8VM8M8TCe-0bTUPTWQ8bjgt8QK-WTEgBc9T3o4hqxtFDKNkcJdD8w2z-zFMfXLomy7_mB6YDu1eousi5IoC7vJaJRQdXnnfHRTER0NZYEfHmx1_LX8ojb173R3wsYKsYZ3c3Z',
-      title: 'Golden Corridor Bokeh',
-      colorMatch: 'Amber Warmth 94%',
+      title: 'โบเก้แสงสีทองทางเดินอาคาร',
+      colorMatch: 'โทนแสงอุ่นแอมเบอร์ 94%',
       exif: 'f/1.8 • 1/640s • ISO 100',
     },
   ];
@@ -40,7 +40,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
   const [aspectRatio, setAspectRatio] = useState<'aspect-[4/5]' | 'aspect-[3/4]' | 'aspect-square'>('aspect-[4/5]');
   const [rotation, setRotation] = useState(0);
   const [caption, setCaption] = useState(
-    'Caught this natural candid during afternoon break by the library lockers. The morning sunlight illuminated the deep blue denim, naturally pulling the subject from the background hallway blur.'
+    'บันทึกภาพแคนดิดระหว่างพักเบรกข้างตู้ล็อกเกอร์หน้าห้องสมุด แสงแดดยามบ่ายสะท้อนขับสีน้ำเงินของเสื้อให้โดดเด่นตัดกับความเบลอของฉากหลัง'
   );
   const [visibility, setVisibility] = useState<'members' | 'mentors'>('members');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -125,14 +125,14 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
           </button>
           <div className="flex flex-col items-center">
             <span className="text-[10px] uppercase font-bold tracking-wider text-purple-400">
-              Active Mission
+              ภารกิจที่ทำอยู่
             </span>
             <h2 className="text-sm font-bold text-white tracking-tight">
               {selectedChallengeTitle}
             </h2>
           </div>
           <button
-            onClick={() => alert('คำแนะนำ: จัดวางจุดตัด 9 ช่อง และมองหาวัตถุที่มีโทนสีน้ำเงินเด่นชัด')}
+            onClick={() => alert('คำแนะนำ: จัดวางจุดตัด 9 ช่อง และมองหาวัตถุที่มีโทนสีเด่นชัด')}
             className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
           >
             <span className="material-symbols-outlined text-[20px]">help</span>
@@ -196,16 +196,16 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
             <button
               onClick={handleCycleSample}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800/80 hover:bg-gray-700 text-gray-200 text-xs font-semibold transition-colors"
-              title="Switch Sample Shot"
+              title="สลับภาพตัวอย่าง"
             >
               <span className="material-symbols-outlined text-[16px]">sync</span>
-              <span>Sample</span>
+              <span>ภาพตัวอย่าง</span>
             </button>
 
             <button
               onClick={cycleAspectRatio}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gray-800/80 hover:bg-gray-700 text-gray-200 text-xs font-semibold transition-colors"
-              title="Change Aspect Ratio"
+              title="เปลี่ยนสัดส่วนภาพ"
             >
               <span className="material-symbols-outlined text-[16px]">aspect_ratio</span>
               <span className="text-[11px] font-mono">
@@ -216,16 +216,16 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
             <button
               onClick={handleRotate}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-800/80 hover:bg-gray-700 text-gray-200 text-xs font-semibold transition-colors"
-              title="Rotate 90 degrees"
+              title="หมุน 90 องศา"
             >
               <span className="material-symbols-outlined text-[16px]">rotate_90_degrees_cw</span>
-              <span>Rotate</span>
+              <span>หมุนภาพ</span>
             </button>
 
             {/* Upload File Input */}
             <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-900/80 hover:bg-purple-800 text-purple-200 text-xs font-semibold cursor-pointer transition-colors border border-purple-700/50">
               <span className="material-symbols-outlined text-[16px]">upload</span>
-              <span>Custom</span>
+              <span>อัปโหลด</span>
               <input
                 type="file"
                 accept="image/*"
@@ -242,7 +242,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-gray-300">
-                Caption & Visual Story
+                คำบรรยาย & เรื่องราวภาพถ่าย
               </label>
               <span className="text-[10px] text-gray-400 font-mono">
                 {caption.length}/280
@@ -252,7 +252,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
               rows={3}
               value={caption}
               onChange={(e) => setCaption(e.target.value.slice(0, 280))}
-              placeholder="Tell the club about your composition, lens choices, or light trap..."
+              placeholder="เล่าเรื่องราวเกี่ยวกับมุมมองภาพ เทคนิค แสง หรือสิ่งที่ประทับใจ..."
               className="w-full bg-[#1b1f2e] border border-gray-700/70 rounded-xl p-3 text-xs text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
             />
           </div>
@@ -263,7 +263,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
               auto_awesome
             </span>
             <div className="flex-1 truncate">
-              Auto-detected: <span className="text-gray-200 font-mono">27mm • f/2.8 • natural morning light</span>
+              ตรวจจับอัตโนมัติ: <span className="text-gray-200 font-mono">27mm • f/2.8 • แสงธรรมชาติ</span>
             </div>
           </div>
 
@@ -274,7 +274,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
                 stars
               </span>
               <div>
-                <div className="text-xs font-bold text-white">Applied Challenge</div>
+                <div className="text-xs font-bold text-white">ภารกิจที่ใช้ส่ง</div>
                 <div className="text-[11px] text-purple-300">{selectedChallengeTitle}</div>
               </div>
             </div>
@@ -285,7 +285,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
 
           {/* Privacy & Safe School Space */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-300">Who can see this photo?</label>
+            <label className="text-xs font-bold text-gray-300">ใครมองเห็นภาพนี้ได้บ้าง?</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -298,9 +298,9 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
               >
                 <div className="flex items-center gap-1.5 font-bold text-xs">
                   <span className="material-symbols-outlined text-[16px]">groups</span>
-                  <span>Club Members</span>
+                  <span>สมาชิกชมรม</span>
                 </div>
-                <span className="text-[10px] text-gray-400 mt-0.5">Safe school space</span>
+                <span className="text-[10px] text-gray-400 mt-0.5">พื้นที่ปลอดภัยในโรงเรียน</span>
               </button>
 
               <button
@@ -314,9 +314,9 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
               >
                 <div className="flex items-center gap-1.5 font-bold text-xs">
                   <span className="material-symbols-outlined text-[16px]">lock</span>
-                  <span>Only Mentors</span>
+                  <span>เฉพาะเมนเทอร์</span>
                 </div>
-                <span className="text-[10px] text-gray-400 mt-0.5">Private feedback</span>
+                <span className="text-[10px] text-gray-400 mt-0.5">รับคำแนะนำแบบส่วนตัว</span>
               </button>
             </div>
           </div>
@@ -328,7 +328,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
             onClick={onClose}
             className="flex-1 py-3 rounded-xl bg-gray-800/80 hover:bg-gray-700 text-gray-300 font-bold text-xs transition-colors"
           >
-            Save Draft
+            บันทึกแบบร่าง
           </button>
           <button
             onClick={handleSubmit}
@@ -338,11 +338,11 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
             {isSubmitting ? (
               <span className="flex items-center gap-1.5">
                 <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                <span>Submitting & Scoring...</span>
+                <span>กำลังอัปโหลดและประเมินผล...</span>
               </span>
             ) : (
               <>
-                <span>Submit Photo (+50 XP)</span>
+                <span>ส่งภาพผลงาน (+50 XP)</span>
                 <span className="material-symbols-outlined text-[16px]">send</span>
               </>
             )}

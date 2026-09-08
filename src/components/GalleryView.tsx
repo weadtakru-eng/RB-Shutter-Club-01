@@ -23,13 +23,13 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const filterChips = [
-    { id: 'latest', label: 'Latest' },
-    { id: 'popular', label: 'Popular 🔥' },
-    { id: 'quests', label: 'Quests' },
-    { id: 'nature', label: 'Nature' },
-    { id: 'portrait', label: 'Portrait' },
-    { id: 'creative', label: 'Creative' },
-    { id: 'bw', label: 'B&W' },
+    { id: 'latest', label: 'ล่าสุด' },
+    { id: 'popular', label: 'ยอดนิยม 🔥' },
+    { id: 'quests', label: 'จากภารกิจ' },
+    { id: 'nature', label: 'ธรรมชาติ' },
+    { id: 'portrait', label: 'ภาพบุคคล' },
+    { id: 'creative', label: 'สร้างสรรค์' },
+    { id: 'bw', label: 'ขาวดำ' },
   ];
 
   const filteredPhotos = photos.filter((p) => {
@@ -55,14 +55,14 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight">Gallery</h1>
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight">แกลเลอรีภาพถ่าย</h1>
             <span className="text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
               <span className="material-symbols-outlined text-[12px]">verified_user</span>
-              Safe Space
+              พื้นที่ปลอดภัย
             </span>
           </div>
           <p className="text-xs text-gray-500 mt-0.5">
-            Student captures, peer critiques & mentor highlights
+            ภาพถ่ายฝีมือนักเรียน คำวิจารณ์เชิงสร้างสรรค์ และภาพเด่นจากเมนเทอร์
           </p>
         </div>
 
@@ -75,7 +75,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                 ? 'bg-white text-purple-700 shadow-xs'
                 : 'text-gray-500 hover:text-gray-900'
             }`}
-            title="Grid View"
+            title="มุมมองตาราง"
           >
             <span className="material-symbols-outlined text-[18px]">grid_view</span>
           </button>
@@ -86,7 +86,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                 ? 'bg-white text-purple-700 shadow-xs'
                 : 'text-gray-500 hover:text-gray-900'
             }`}
-            title="Feed View"
+            title="มุมมองฟีด"
           >
             <span className="material-symbols-outlined text-[18px]">view_agenda</span>
           </button>
@@ -103,7 +103,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search student photos, quests, cameras..."
+            placeholder="ค้นหาภาพถ่าย ภารกิจ ชื่อเพื่อน หรือกล้องที่ใช้..."
             className="bg-transparent border-none outline-none text-xs text-gray-900 placeholder:text-gray-400 w-full"
           />
           {searchQuery && (
@@ -155,7 +155,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                   {photo.isMentorPick && (
                     <div className="absolute top-2 left-2 bg-purple-700/90 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
                       <span className="material-symbols-outlined text-[11px]">star</span>
-                      <span>Mentor Pick</span>
+                      <span>ภาพเด่นเมนเทอร์</span>
                     </div>
                   )}
 
@@ -163,7 +163,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                   {photo.isClubLife && (
                     <div className="absolute top-2 left-2 bg-pink-600/90 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
                       <span className="material-symbols-outlined text-[11px]">groups</span>
-                      <span>Club Life</span>
+                      <span>ชีวิตชมรม</span>
                     </div>
                   )}
 
@@ -263,7 +263,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                   {photo.isMentorPick && (
                     <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                       <span className="material-symbols-outlined text-[12px]">star</span>
-                      Mentor Pick
+                      ภาพเด่นเมนเทอร์
                     </span>
                   )}
                 </div>
@@ -300,7 +300,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                       >
                         favorite
                       </span>
-                      <span>{photo.likes} Likes</span>
+                      <span>{photo.likes} ถูกใจ</span>
                     </button>
                     <button
                       onClick={(e) => {
@@ -310,7 +310,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                       className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900"
                     >
                       <span className="material-symbols-outlined text-[20px]">chat_bubble</span>
-                      <span>{photo.commentsCount} Critiques</span>
+                      <span>{photo.commentsCount} ความคิดเห็น</span>
                     </button>
                   </div>
 
@@ -348,7 +348,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
         className="fixed bottom-20 right-4 z-30 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs px-4 py-3 rounded-full shadow-[0_6px_20px_rgba(107,56,212,0.4)] active:scale-95 transition-all flex items-center gap-2"
       >
         <span className="material-symbols-outlined text-[18px]">add_a_photo</span>
-        <span>Submit Shot</span>
+        <span>ส่งผลงานภาพถ่าย</span>
       </button>
     </div>
   );

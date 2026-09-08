@@ -14,11 +14,11 @@ export const ActivitiesView: React.FC<ActivitiesViewProps> = ({ onShowToast }) =
   const [selectedTicketEvent, setSelectedTicketEvent] = useState<ActivityEvent | null>(null);
 
   const filterChips = [
-    { id: 'all', label: 'All Events' },
-    { id: 'Workshop', label: 'Workshops' },
-    { id: 'Photo Walk', label: 'Photo Walks' },
-    { id: 'Photo Hunt', label: 'Photo Hunts' },
-    { id: 'Exhibition', label: 'Exhibitions' },
+    { id: 'all', label: 'กิจกรรมทั้งหมด' },
+    { id: 'Workshop', label: 'เวิร์กช็อป' },
+    { id: 'Photo Walk', label: 'เดินถ่ายภาพ' },
+    { id: 'Photo Hunt', label: 'ล่าภาพถ่าย' },
+    { id: 'Exhibition', label: 'นิทรรศการ' },
   ];
 
   const handleRSVP = (activityId: string) => {
@@ -29,7 +29,7 @@ export const ActivitiesView: React.FC<ActivitiesViewProps> = ({ onShowToast }) =
           return {
             ...act,
             isEnrolled: newStatus,
-            statusTag: newStatus ? 'You\'re Going' : 'Open',
+            statusTag: newStatus ? 'ลงทะเบียนแล้ว' : 'เปิดรับสมัคร',
             enrolledSpots: newStatus ? act.enrolledSpots + 1 : act.enrolledSpots - 1,
           };
         }
@@ -59,11 +59,11 @@ export const ActivitiesView: React.FC<ActivitiesViewProps> = ({ onShowToast }) =
       {/* Header info */}
       <div className="flex flex-col">
         <span className="text-[10px] uppercase font-bold text-purple-700 tracking-wider">
-          Rayongwittayakom
+          โรงเรียนระยองวิทยาคม
         </span>
-        <h1 className="text-2xl font-black text-gray-900 tracking-tight">Club Activities</h1>
+        <h1 className="text-2xl font-black text-gray-900 tracking-tight">กิจกรรมชมรม</h1>
         <p className="text-xs text-gray-500 mt-0.5">
-          Learn, practice and create together with your peers.
+          เรียนรู้ ฝึกฝน และสร้างสรรค์ผลงานร่วมกับเพื่อนในชมรม
         </p>
       </div>
 
@@ -77,7 +77,7 @@ export const ActivitiesView: React.FC<ActivitiesViewProps> = ({ onShowToast }) =
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search workshops, photo walks, exhibitions..."
+            placeholder="ค้นหาเวิร์กช็อป เดินถ่ายภาพ นิทรรศการ สถานที่..."
             className="bg-transparent border-none outline-none text-xs text-gray-900 placeholder:text-gray-400 w-full"
           />
           {searchQuery && (
@@ -96,7 +96,7 @@ export const ActivitiesView: React.FC<ActivitiesViewProps> = ({ onShowToast }) =
             timeFilter === 'month' ? 'bg-white text-purple-700 shadow-xs' : 'text-gray-500'
           }`}
         >
-          This Month
+          เดือนนี้
         </button>
         <button
           onClick={() => setTimeFilter('upcoming')}
@@ -104,7 +104,7 @@ export const ActivitiesView: React.FC<ActivitiesViewProps> = ({ onShowToast }) =
             timeFilter === 'upcoming' ? 'bg-white text-purple-700 shadow-xs' : 'text-gray-500'
           }`}
         >
-          Upcoming
+          เร็วๆ นี้
         </button>
         <button
           onClick={() => setTimeFilter('past')}
@@ -112,7 +112,7 @@ export const ActivitiesView: React.FC<ActivitiesViewProps> = ({ onShowToast }) =
             timeFilter === 'past' ? 'bg-white text-purple-700 shadow-xs' : 'text-gray-500'
           }`}
         >
-          Past Sessions
+          ที่ผ่านมา
         </button>
       </div>
 
@@ -163,19 +163,19 @@ export const ActivitiesView: React.FC<ActivitiesViewProps> = ({ onShowToast }) =
                     >
                       check_circle
                     </span>
-                    You're Going
+                    ลงทะเบียนแล้ว
                   </span>
                 ) : event.statusTag === 'Almost Full' ? (
                   <span className="text-[10px] font-bold bg-amber-500 text-black px-2.5 py-1 rounded-full">
-                    Almost Full
+                    ใกล้เต็มแล้ว
                   </span>
                 ) : event.statusTag === 'Waitlist Available' ? (
                   <span className="text-[10px] font-bold bg-purple-600 text-white px-2.5 py-1 rounded-full">
-                    Waitlist Available
+                    มีรายชื่อสำรอง
                   </span>
                 ) : (
                   <span className="text-[10px] font-bold bg-gray-900/80 backdrop-blur-md text-white px-2.5 py-1 rounded-full">
-                    Open
+                    เปิดรับสมัคร
                   </span>
                 )}
               </div>
@@ -215,7 +215,7 @@ export const ActivitiesView: React.FC<ActivitiesViewProps> = ({ onShowToast }) =
               <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
                 <div className="flex flex-col">
                   <span className="text-[11px] font-bold text-gray-800">
-                    {event.enrolledSpots} / {event.totalSpots} Participants
+                    {event.enrolledSpots} / {event.totalSpots} คนเข้าร่วม
                   </span>
                   <div className="w-24 bg-gray-100 h-1.5 rounded-full overflow-hidden mt-1">
                     <div
@@ -238,12 +238,12 @@ export const ActivitiesView: React.FC<ActivitiesViewProps> = ({ onShowToast }) =
                       className="bg-purple-50 text-purple-800 hover:bg-purple-100 text-xs font-bold px-3 py-2 rounded-full flex items-center gap-1 transition-all"
                     >
                       <span className="material-symbols-outlined text-[15px]">confirmation_number</span>
-                      <span>View Ticket</span>
+                      <span>ดูบัตรเข้าร่วม</span>
                     </button>
                     <button
                       onClick={() => handleRSVP(event.id)}
                       className="text-gray-400 hover:text-rose-600 text-xs font-bold p-1 transition-colors"
-                      title="Cancel RSVP"
+                      title="ยกเลิกการลงทะเบียน"
                     >
                       <span className="material-symbols-outlined text-[18px]">cancel</span>
                     </button>
@@ -253,7 +253,7 @@ export const ActivitiesView: React.FC<ActivitiesViewProps> = ({ onShowToast }) =
                     onClick={() => handleRSVP(event.id)}
                     className="bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold px-4 py-2 rounded-full shadow-xs active:scale-95 transition-all"
                   >
-                    Book Activity (+{event.xpReward} XP)
+                    ลงทะเบียน (+{event.xpReward} XP)
                   </button>
                 )}
               </div>
@@ -273,7 +273,7 @@ export const ActivitiesView: React.FC<ActivitiesViewProps> = ({ onShowToast }) =
             </div>
             <div className="text-center">
               <span className="text-[10px] uppercase font-bold text-purple-600 tracking-wider">
-                Official E-Pass • RB Shutter Club
+                บัตรดิจิทัลทางการ • RB Shutter Club
               </span>
               <h3 className="text-base font-extrabold text-gray-900 mt-0.5">
                 {selectedTicketEvent.title}
@@ -299,16 +299,16 @@ export const ActivitiesView: React.FC<ActivitiesViewProps> = ({ onShowToast }) =
                 />
               </div>
               <span className="font-mono text-xs font-bold text-gray-700 mt-2">
-                PASS: RB-S2-EV-9241
+                รหัสบัตร: RB-S2-EV-9241
               </span>
-              <span className="text-[10px] text-gray-400">Scan at entrance with mentor</span>
+              <span className="text-[10px] text-gray-400">สแกนที่จุดลงทะเบียนกับพี่เมนเทอร์</span>
             </div>
 
             <button
               onClick={() => setSelectedTicketEvent(null)}
               className="w-full py-3 rounded-full bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-sm transition-all"
             >
-              Done
+              เรียบร้อย
             </button>
           </div>
         </div>

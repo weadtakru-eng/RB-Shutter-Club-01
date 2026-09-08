@@ -26,16 +26,16 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
           <span className="text-[10px] uppercase font-bold text-purple-700 tracking-wider">
-            Season 2 • Week 6
+            ซีซัน 2 • สัปดาห์ที่ 6
           </span>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Leaderboard</h1>
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">ตารางอันดับชมรม</h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Challenge yourself. Inspire each other.
+            ท้าทายตนเอง สร้างแรงบันดาลใจให้เพื่อน
           </p>
         </div>
         <span className="text-[10px] bg-purple-100 text-purple-800 px-2.5 py-1 rounded-full font-bold flex items-center gap-1 shadow-xs">
           <span className="material-symbols-outlined text-[13px]">timer</span>
-          Ends in 2d 14h
+          เหลือเวลา 2 วัน 14 ชม.
         </span>
       </div>
 
@@ -47,7 +47,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
             timeFilter === 'weekly' ? 'bg-white text-purple-700 shadow-xs' : 'text-gray-500'
           }`}
         >
-          Weekly
+          รายสัปดาห์
         </button>
         <button
           onClick={() => setTimeFilter('monthly')}
@@ -55,7 +55,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
             timeFilter === 'monthly' ? 'bg-white text-purple-700 shadow-xs' : 'text-gray-500'
           }`}
         >
-          Monthly
+          รายเดือน
         </button>
         <button
           onClick={() => setTimeFilter('all')}
@@ -63,7 +63,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
             timeFilter === 'all' ? 'bg-white text-purple-700 shadow-xs' : 'text-gray-500'
           }`}
         >
-          All Time
+          ตลอดกาล
         </button>
       </div>
 
@@ -141,17 +141,17 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-purple-700 text-white flex items-center justify-center font-bold text-sm border-2 border-purple-400">
-              YOU
+              คุณ
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm">{user.name}</span>
                 <span className="text-[10px] bg-purple-800 text-purple-200 px-2 py-0.2 rounded-full font-semibold">
-                  Rank #{user.rank}
+                  อันดับ #{user.rank}
                 </span>
               </div>
               <span className="text-xs text-purple-200">
-                {user.currentXP} XP • 4-Day streak
+                {user.currentXP} XP • ต่อเนื่อง 4 วัน
               </span>
             </div>
           </div>
@@ -159,19 +159,19 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
             onClick={onGoToChallenges}
             className="bg-white hover:bg-purple-50 text-purple-900 font-bold text-xs px-3.5 py-1.5 rounded-full transition-all active:scale-95 shadow-sm"
           >
-            View Quests
+            ดูภารกิจ
           </button>
         </div>
         <p className="text-[11px] text-purple-200/90 leading-relaxed border-t border-purple-800/80 pt-2">
-          Only <span className="font-bold text-white">45 XP</span> behind #6 Ploy V. Complete today's color hunt challenge to climb the ranks!
+          ตามหลังอันดับ #6 (น้องพลอย) เพียง <span className="font-bold text-white">45 XP</span>! พิชิตภารกิจล่าสีสันวันนี้เพื่อเลื่อนอันดับ
         </p>
       </div>
 
       {/* Rankings List */}
       <div className="flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 divide-y divide-gray-100">
         <div className="px-4 py-2.5 bg-gray-50 flex items-center justify-between text-[11px] font-bold text-gray-500">
-          <span>Active Photographers (32)</span>
-          <span>XP Score</span>
+          <span>ช่างภาพร่วมกิจกรรม (32 คน)</span>
+          <span>คะแนน XP</span>
         </div>
 
         {restMembers.map((member) => (
@@ -197,7 +197,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                   </span>
                   {member.isYou && (
                     <span className="text-[9px] bg-purple-700 text-white font-extrabold px-1.5 py-0.2 rounded-full">
-                      YOU
+                      คุณ
                     </span>
                   )}
                   <span className="text-[10px] text-gray-400">({member.grade})</span>
@@ -227,10 +227,10 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
       {/* Inspirational Club Quote */}
       <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-center">
         <p className="text-xs italic text-gray-600 font-serif">
-          "Photography is the story I fail to put into words."
+          "การถ่ายภาพคือเรื่องราวที่เราไม่อาจบรรยายออกมาเป็นคำพูดได้"
         </p>
         <span className="text-[10px] text-gray-400 font-sans mt-1 block">
-          — Destin Sparks • RB Shutter Club Weekly Inspiration
+          — เดสติน สปาร์กส์ • ข้อคิดประจำสัปดาห์ ชมรม RB Shutter Club
         </span>
       </div>
     </div>

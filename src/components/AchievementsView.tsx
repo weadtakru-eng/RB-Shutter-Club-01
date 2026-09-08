@@ -29,11 +29,11 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
           <span className="text-[10px] uppercase font-bold text-purple-700 tracking-wider">
-            Hall of Trophies
+            หอเกียรติยศและเหรียญรางวัล
           </span>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Achievements</h1>
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">ความสำเร็จ & เหรียญตรา</h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Level up your creative skills and earn recognized badges
+            พัฒนาทักษะการถ่ายภาพและสะสมเหรียญตราเกียรติยศ
           </p>
         </div>
         <span className="text-xs bg-amber-50 text-amber-900 border border-amber-200 px-3 py-1 rounded-full font-bold flex items-center gap-1 shadow-xs">
@@ -43,7 +43,7 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
           >
             stars
           </span>
-          +320 XP Total
+          รวม +320 XP
         </span>
       </div>
 
@@ -52,18 +52,18 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
         {/* Left: Level and XP Info */}
         <div className="flex flex-col flex-1 min-w-0">
           <span className="text-[10px] font-bold uppercase text-purple-700 tracking-wider">
-            Current Level
+            ระดับปัจจุบัน
           </span>
           <h3 className="text-base font-extrabold text-gray-900 mt-0.5 truncate">
-            Level {user.level} {user.levelTitle}
+            เลเวล {user.level} {user.levelTitle}
           </h3>
           <p className="text-xs text-gray-500 mt-1">
-            7 / 16 Badges Unlocked
+            ปลดล็อกแล้ว 7 / 16 เหรียญตรา
           </p>
 
           <div className="mt-3 flex flex-col gap-1">
             <div className="flex justify-between text-[10px] font-bold text-gray-500">
-              <span>Mastery Path</span>
+              <span>เส้นทางสู่ระดับถัดไป</span>
               <span>{user.currentXP} / {user.targetXP} XP</span>
             </div>
             <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
@@ -97,7 +97,7 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
           </svg>
           <div className="absolute flex flex-col items-center justify-center text-center">
             <span className="text-sm font-black text-gray-900">44%</span>
-            <span className="text-[8px] uppercase font-bold text-gray-400">Global</span>
+            <span className="text-[8px] uppercase font-bold text-gray-400">ภาพรวม</span>
           </div>
         </div>
       </div>
@@ -112,7 +112,7 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
               : 'bg-white text-gray-600 border border-gray-100'
           }`}
         >
-          All Badges (16)
+          ทั้งหมด (16)
         </button>
         <button
           onClick={() => setFilterTab('unlocked')}
@@ -122,7 +122,7 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
               : 'bg-white text-gray-600 border border-gray-100'
           }`}
         >
-          Unlocked (7)
+          ปลดล็อกแล้ว (7)
         </button>
         <button
           onClick={() => setFilterTab('progress')}
@@ -132,7 +132,7 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
               : 'bg-white text-gray-600 border border-gray-100'
           }`}
         >
-          In Progress (5)
+          กำลังทำ (5)
         </button>
         <button
           onClick={() => setFilterTab('mastery')}
@@ -142,7 +142,7 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
               : 'bg-white text-gray-600 border border-gray-100'
           }`}
         >
-          Mastery (4)
+          ระดับเชี่ยวชาญ (4)
         </button>
       </div>
 
@@ -213,19 +213,19 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
       <div className="bg-gradient-to-r from-purple-900 to-indigo-900 text-white rounded-3xl p-5 shadow-sm relative overflow-hidden">
         <div className="relative z-10 flex flex-col gap-2">
           <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-300">
-            Secret Quest Spotlight
+            ภารกิจลับพิเศษ
           </span>
-          <h3 className="text-base font-black">The Golden Hour Alchemist</h3>
+          <h3 className="text-base font-black">ผู้เล่นแร่แปรธาตุแสงสีทอง</h3>
           <p className="text-xs text-purple-200 leading-relaxed">
-            Capture 3 unique golden hour campus shots during sunrise or sunset with lens flare control. Unlocks exclusive Club Lead certificate.
+            ถ่ายภาพช่วงแสงสีทองในโรงเรียน 3 ภาพ ควบคุมแสงแฟลร์ได้อย่างประณีต เพื่อปลดล็อกใบประกาศนียบัตรพิเศษ
           </p>
           <div className="pt-2 flex items-center justify-between">
-            <span className="text-xs font-bold text-amber-300">+250 XP Reward</span>
+            <span className="text-xs font-bold text-amber-300">รางวัล +250 XP</span>
             <button
               onClick={onGoToChallenges}
               className="bg-white text-purple-900 hover:bg-purple-50 font-bold text-xs px-4 py-2 rounded-full transition-all active:scale-95 shadow-sm"
             >
-              View Quest
+              ดูภารกิจ
             </button>
           </div>
         </div>
