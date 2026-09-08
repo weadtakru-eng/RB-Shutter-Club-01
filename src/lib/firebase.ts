@@ -24,7 +24,7 @@ if (authDomain.includes('vercel.app')) {
   authDomain = 'rb-shutter-club-01.firebaseapp.com';
 }
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfigData.apiKey,
   authDomain: authDomain,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfigData.projectId || 'rb-shutter-club-01',
