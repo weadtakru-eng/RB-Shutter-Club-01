@@ -18,8 +18,7 @@ interface LoginModalProps {
   onShowToast: (msg: string) => void;
 }
 
-const VERCEL_PROD_URL =
-  'https://rb-shutter-club-01-58r0sx5pb-weadtakru-eng.vercel.app';
+const VERCEL_PROD_URL = 'https://rb-shutter-club-01.vercel.app';
 
 export const LoginModal: React.FC<LoginModalProps> = ({
   isOpen,
@@ -62,22 +61,36 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       onClose();
     } catch (err: any) {
       const code = err?.code || '';
+      const message = err?.message || '';
       setErrorCode(code);
 
-      if (code === 'auth/unauthorized-domain' || code === 'auth/invalid-continue-uri') {
+      // Explicit console.error logging required by diagnostic guidelines
+      console.error('[Firebase Auth Error - LoginModal handleGoogleSignIn]:', {
+        code,
+        message,
+        currentHost,
+        origin: typeof window !== 'undefined' ? window.location.origin : '',
+        error: err,
+      });
+
+      if (code === 'auth/unauthorized-domain') {
         setErrorMessage(
-          `โดเมนปัจจุบัน (${currentHost}) ยังไม่ได้เพิ่มใน Firebase Authentication Authorized Domains ของโปรเจกต์ rb-shutter-club-01`
+          `โดเมนปัจจุบัน (${currentHost}) ยังไม่ได้รับอนุญาตใน Firebase Authentication > Authorized domains ของโปรเจกต์ rb-shutter-club-01`
+        );
+      } else if (code === 'auth/invalid-continue-uri') {
+        setErrorMessage(
+          `API Key และ authDomain ไม่ตรงกันกับ Firebase Project (โปรดตรวจสอบ VITE_FIREBASE_API_KEY ใน Vercel Environment Variables ให้ตรงกับโปรเจกต์ rb-shutter-club-01)`
         );
       } else if (code === 'auth/popup-blocked') {
         setErrorMessage(
-          'เบราว์เซอร์หรือ iFrame บล็อกหน้าต่างป๊อปอัป กรุณาเลือก "เปิดในหน้าต่างหลัก" เพื่อเข้าสู่ระบบ'
+          'เบราว์เซอร์หรือ iFrame บล็อกหน้าต่างป๊อปอัป กรุณาเลือก "เปิดในหน้าต่างหลัก" หรือใช้วิธี Redirect เพื่อเข้าสู่ระบบ'
         );
       } else if (code === 'auth/popup-closed-by-user') {
         setErrorMessage('คุณได้ปิดหน้าต่างเข้าสู่ระบบก่อนดำเนินการเสร็จสิ้น');
       } else if (code === 'auth/cancelled-popup-request') {
         // Ignored
       } else {
-        setErrorMessage(err?.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบด้วย Google');
+        setErrorMessage(message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบด้วย Google');
       }
     } finally {
       setIsLoading(false);
@@ -95,8 +108,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     try {
       await signInWithGoogleRedirect();
     } catch (err: any) {
-      setErrorCode(err?.code || '');
-      setErrorMessage(err?.message || 'ไม่สามารถเริ่มการเข้าสู่ระบบแบบ Redirect ได้');
+      const code = err?.code || '';
+      const message = err?.message || '';
+      setErrorCode(code);
+
+      // Explicit console.error logging required by diagnostic guidelines
+      console.error('[Firebase Auth Error - LoginModal handleGoogleRedirect]:', {
+        code,
+        message,
+        currentHost,
+        error: err,
+      });
+
+      setErrorMessage(message || 'ไม่สามารถเริ่มการเข้าสู่ระบบแบบ Redirect ได้');
       setIsLoading(false);
     }
   };

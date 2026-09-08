@@ -88,7 +88,11 @@ export default function App() {
         }
       })
       .catch((err: any) => {
-        console.warn('Firebase Redirect Auth Notice:', err?.code || err);
+        console.error('[Firebase Auth Error - getRedirectResult]:', {
+          code: err?.code,
+          message: err?.message,
+          fullError: err,
+        });
       });
 
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {

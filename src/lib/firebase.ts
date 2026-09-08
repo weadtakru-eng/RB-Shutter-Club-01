@@ -12,17 +12,53 @@ import {
 import { getFirestore } from 'firebase/firestore';
 import firebaseConfigData from '../../firebase-applet-config.json';
 
-// Ensure authDomain is strictly Firebase Authentication domain (rb-shutter-club-01.firebaseapp.com)
-// and NEVER set to a Vercel domain.
-const authDomain = 'rb-shutter-club-01.firebaseapp.com';
+// Environment variables with fallback
+const envAuthDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN;
+const envApiKey = import.meta.env.VITE_FIREBASE_API_KEY;
+const envProjectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+const envStorageBucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET;
+const envMessagingSenderId = import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID;
+const envAppId = import.meta.env.VITE_FIREBASE_APP_ID;
+
+// Detect if running in AI Studio development container vs Vercel / custom production
+const isDefaultAiStudioKey = !envApiKey || envApiKey === firebaseConfigData.apiKey;
+const isLocalOrStudioDev =
+  typeof window !== 'undefined' &&
+  (window.location.hostname.includes('run.app') ||
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1');
+
+// Match authDomain with the corresponding project to prevent INVALID_CONTINUE_URI:
+// If using the default AI Studio key in development, route to its hosting domain.
+// On Vercel (or when VITE_FIREBASE_AUTH_DOMAIN is provided), use rb-shutter-club-01.firebaseapp.com.
+const authDomain =
+  envAuthDomain ||
+  (isDefaultAiStudioKey && isLocalOrStudioDev
+    ? 'gen-lang-client-0251310318.firebaseapp.com'
+    : 'rb-shutter-club-01.firebaseapp.com');
+
+const projectId =
+  envProjectId ||
+  (authDomain.includes('gen-lang-client')
+    ? 'gen-lang-client-0251310318'
+    : 'rb-shutter-club-01');
 
 export const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfigData.apiKey,
+  apiKey: envApiKey || firebaseConfigData.apiKey,
   authDomain: authDomain,
-  projectId: 'rb-shutter-club-01',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfigData.storageBucket || 'rb-shutter-club-01.firebasestorage.app',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigData.messagingSenderId || '216138127351',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfigData.appId || '1:216138127351:web:b80983339b3c42351e00f2',
+  projectId: projectId,
+  storageBucket:
+    envStorageBucket ||
+    firebaseConfigData.storageBucket ||
+    'rb-shutter-club-01.firebasestorage.app',
+  messagingSenderId:
+    envMessagingSenderId ||
+    firebaseConfigData.messagingSenderId ||
+    '216138127351',
+  appId:
+    envAppId ||
+    firebaseConfigData.appId ||
+    '1:216138127351:web:b80983339b3c42351e00f2',
 };
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -60,6 +96,7 @@ export function isAuthorizedDomain(): boolean {
   return (
     host === 'localhost' ||
     host === '127.0.0.1' ||
+    host === 'rb-shutter-club-01.vercel.app' ||
     host.endsWith('.firebaseapp.com') ||
     host.endsWith('.web.app') ||
     host.endsWith('.vercel.app') ||
@@ -77,17 +114,19 @@ export async function signInWithGoogle(): Promise<FirebaseUser> {
     return result.user;
   } catch (error: any) {
     const code = error?.code || '';
-    if (
-      code === 'auth/invalid-continue-uri' ||
-      code === 'auth/unauthorized-domain' ||
-      code === 'auth/popup-closed-by-user' ||
-      code === 'auth/popup-blocked' ||
-      code === 'auth/cancelled-popup-request'
-    ) {
-      console.warn(`[Firebase Auth notice] ${code}:`, error?.message || error);
-    } else {
-      console.warn('[Firebase Google Sign-In]:', error);
-    }
+    const message = error?.message || '';
+
+    // Explicit error logging with error.code, error.message, and runtime context
+    console.error('[Firebase Auth Error - signInWithPopup]:', {
+      code,
+      message,
+      authDomain: auth.config.authDomain,
+      projectId: firebaseConfig.projectId,
+      currentOrigin: typeof window !== 'undefined' ? window.location.origin : '',
+      currentHost: typeof window !== 'undefined' ? window.location.hostname : '',
+      fullError: error,
+    });
+
     throw error;
   }
 }
@@ -105,7 +144,20 @@ export async function signInWithGoogleRedirect(): Promise<void> {
   try {
     await signInWithRedirect(auth, provider);
   } catch (error: any) {
-    console.warn('[Firebase Google Sign-In Redirect notice]:', error?.code || error);
+    const code = error?.code || '';
+    const message = error?.message || '';
+
+    // Explicit error logging with error.code, error.message, and runtime context
+    console.error('[Firebase Auth Error - signInWithGoogleRedirect]:', {
+      code,
+      message,
+      authDomain: auth.config.authDomain,
+      projectId: firebaseConfig.projectId,
+      currentOrigin: typeof window !== 'undefined' ? window.location.origin : '',
+      currentHost: typeof window !== 'undefined' ? window.location.hostname : '',
+      fullError: error,
+    });
+
     throw error;
   }
 }
@@ -116,8 +168,12 @@ export async function signInWithGoogleRedirect(): Promise<void> {
 export async function signOutUser(): Promise<void> {
   try {
     await signOut(auth);
-  } catch (error) {
-    console.warn('[Firebase Sign-Out notice]:', error);
+  } catch (error: any) {
+    console.error('[Firebase Auth Error - signOut]:', {
+      code: error?.code,
+      message: error?.message,
+      fullError: error,
+    });
     throw error;
   }
 }
