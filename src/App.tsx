@@ -12,6 +12,10 @@ import {
   signOutUser,
   getRedirectResult,
 } from './lib/firebase';
+import {
+  subscribeToGalleryPhotos,
+  persistPhotoToGallery,
+} from './lib/galleryStorage';
 
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
@@ -76,7 +80,7 @@ export default function App() {
         }
       })
       .catch((err: any) => {
-        console.error('Firebase Redirect Auth Error:', err);
+        console.warn('Firebase Redirect Auth Notice:', err?.code || err);
       });
 
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -93,6 +97,14 @@ export default function App() {
       }
     });
 
+    return () => unsubscribe();
+  }, []);
+
+  // Listen for gallery photos synchronization across Firestore and LocalStorage
+  useEffect(() => {
+    const unsubscribe = subscribeToGalleryPhotos(INITIAL_PHOTOS, (mergedPhotos) => {
+      setPhotos(mergedPhotos);
+    });
     return () => unsubscribe();
   }, []);
 
@@ -236,15 +248,17 @@ export default function App() {
       rank: Math.max(1, prev.rank - 1),
     }));
 
-    // Add to photos list
+    // Add to photos list & persist to gallery storage
     if (newPhoto.title && newPhoto.imageUrl) {
       const fullPhoto: PhotoItem = {
-        id: newPhoto.id || `photo-${Date.now()}`,
+        id: newPhoto.id || `photo-sub-${Date.now()}`,
         title: newPhoto.title,
         imageUrl: newPhoto.imageUrl,
         authorName: user.name,
         authorGrade: user.grade,
-        authorInitial: 'P',
+        authorInitial: (user.name || 'P').charAt(0).toUpperCase(),
+        authorAvatar: user.avatarUrl,
+        authorId: user.uid,
         avatarColorClass: 'bg-primary-fixed text-primary',
         questTitle: shutterChallengeTitle,
         questCategory: 'color',
@@ -253,6 +267,8 @@ export default function App() {
         aspectRatio: (newPhoto.aspectRatio as any) || 'aspect-[4/5]',
         isLiked: false,
         isBookmarked: false,
+        isUserUpload: true,
+        uploadedAt: new Date().toISOString(),
         exif: newPhoto.exif || {
           camera: 'Fujifilm X-T30 II',
           lens: 'XF 27mm f/2.8 R WR',
@@ -264,7 +280,14 @@ export default function App() {
         visualStory: newPhoto.visualStory,
         tags: newPhoto.tags || ['#RBShutterClub'],
       };
-      setPhotos((prev) => [fullPhoto, ...prev]);
+
+      // Persist to LocalStorage and Firestore
+      persistPhotoToGallery(fullPhoto, user.uid).catch((err) => {
+        console.error('Failed to persist photo to gallery:', err);
+      });
+
+      setPhotos((prev) => [fullPhoto, ...prev.filter((p) => p.id !== fullPhoto.id)]);
+      showToast('บันทึกภาพถ่ายลงแกลเลอรีเรียบร้อยแล้ว (+50 XP)');
     }
 
     // Update challenges state if applicable
@@ -327,6 +350,7 @@ export default function App() {
           {currentTab === 'gallery' && (
             <GalleryView
               photos={photos}
+              user={user}
               onSelectPhoto={(photo) => setSelectedDetailPhoto(photo)}
               onToggleLike={handleToggleLike}
               onToggleBookmark={handleToggleBookmark}
@@ -411,6 +435,7 @@ export default function App() {
           isOpen={isShutterOpen}
           onClose={() => setIsShutterOpen(false)}
           selectedChallengeTitle={shutterChallengeTitle}
+          user={user}
           onSubmitSuccess={handleSubmitSuccess}
         />
 

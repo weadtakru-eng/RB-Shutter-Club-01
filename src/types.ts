@@ -19,6 +19,9 @@ export interface PhotoItem {
   aspectRatio: 'aspect-[3/4]' | 'aspect-[4/5]' | 'aspect-square';
   isLiked?: boolean;
   isBookmarked?: boolean;
+  isUserUpload?: boolean;
+  uploadedAt?: string;
+  authorId?: string;
   exif: {
     camera: string;
     lens: string;

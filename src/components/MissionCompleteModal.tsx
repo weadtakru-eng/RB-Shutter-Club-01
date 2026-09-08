@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PhotoItem, UserProfile } from '../types';
+import { downloadImage } from '../lib/galleryStorage';
 
 interface MissionCompleteModalProps {
   isOpen: boolean;
@@ -20,11 +21,27 @@ export const MissionCompleteModal: React.FC<MissionCompleteModalProps> = ({
   onStartNextChallenge,
   onShowToast,
 }) => {
+  const [isSaving, setIsSaving] = useState(false);
+
   if (!isOpen) return null;
 
   const photoUrl =
     submittedPhoto?.imageUrl ||
     'https://lh3.googleusercontent.com/aida-public/AB6AXuA0p1CMhk2ZCP8SDqMEvZXqvLeXxu_RNWvVa3GaLllPv0RBfAmH4RLkp4tJjtJtsb3gBXEbSzzRgPisusYn2JpzhsO3iPmFgMtirMv9-3G0me2IrAoWY6bCSnhDE0xv_oRVcSjGiUOm1gkXyoGzePPjDfwCixZxOvD6rV73HJmSUY7YU7JNwodVcQ2Bw911vLyEtP8ETVy31iSkz94UDO-Bs54p4JQpwAGBqTE0E9GcBBhb25_T-cO7';
+
+  const handleSavePhoto = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    onShowToast('กำลังบันทึกภาพถ่ายผลงานของคุณลงเครื่อง...');
+    try {
+      await downloadImage(photoUrl, submittedPhoto?.title || 'rb-shutter-mission');
+      onShowToast('บันทึกภาพลงเครื่องเรียบร้อยแล้ว!');
+    } catch {
+      onShowToast('ไม่สามารถบันทึกภาพได้โดยตรง');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-md flex flex-col items-center justify-start sm:py-6 p-2 animate-in fade-in duration-300">
@@ -75,8 +92,20 @@ export const MissionCompleteModal: React.FC<MissionCompleteModalProps> = ({
               >
                 check_circle
               </span>
-              <span>ผลงานได้รับการตรวจสอบแล้ว</span>
+              <span>ผลงานผ่านแล้ว</span>
             </div>
+
+            {/* Direct Save Image Button */}
+            <button
+              onClick={handleSavePhoto}
+              title="บันทึกภาพถ่ายลงเครื่อง (Save Photo)"
+              className="absolute top-3 right-3 flex items-center gap-1 bg-black/60 hover:bg-emerald-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md backdrop-blur-sm transition-all active:scale-95 border border-white/20"
+            >
+              <span className={`material-symbols-outlined text-[15px] ${isSaving ? 'animate-spin' : ''}`}>
+                {isSaving ? 'progress_activity' : 'download'}
+              </span>
+              <span>บันทึกภาพ</span>
+            </button>
 
             {/* Bottom Photo Metadata */}
             <div className="absolute bottom-3 inset-x-3 flex items-center justify-between text-white text-xs">
@@ -179,7 +208,7 @@ export const MissionCompleteModal: React.FC<MissionCompleteModalProps> = ({
         </div>
 
         {/* Bottom Actions */}
-        <div className="p-5 flex flex-col gap-2 relative z-10">
+        <div className="p-5 flex flex-col gap-2.5 relative z-10">
           <div className="flex items-center gap-2">
             <button
               onClick={onGoToGallery}
@@ -196,13 +225,22 @@ export const MissionCompleteModal: React.FC<MissionCompleteModalProps> = ({
             </button>
           </div>
 
-          <button
-            onClick={() => onShowToast('คัดลอกลิงก์การ์ดภาพถ่ายความสำเร็จแล้ว! พร้อมแชร์ลง Instagram Story')}
-            className="text-center text-[11px] text-purple-400 hover:text-purple-300 font-semibold py-1 flex items-center justify-center gap-1 transition-colors"
-          >
-            <span className="material-symbols-outlined text-[14px]">share</span>
-            <span>แชร์การ์ดความสำเร็จ</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSavePhoto}
+              className="flex-1 py-2.5 rounded-xl bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-700/50 text-emerald-300 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[16px]">download</span>
+              <span>บันทึกภาพลงเครื่อง</span>
+            </button>
+            <button
+              onClick={() => onShowToast('คัดลอกลิงก์การ์ดภาพถ่ายความสำเร็จแล้ว! พร้อมแชร์ลง Instagram Story')}
+              className="flex-1 py-2.5 rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-700 text-purple-300 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[15px]">share</span>
+              <span>แชร์การ์ดความสำเร็จ</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

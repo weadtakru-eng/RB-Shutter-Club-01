@@ -3,6 +3,7 @@ import {
   signInWithGoogle,
   signInWithGoogleRedirect,
   isInIframe,
+  isAuthorizedDomain,
 } from '../lib/firebase';
 
 interface LoginModalProps {
@@ -44,10 +45,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (forceTry = false) => {
     setIsLoading(true);
     setErrorMessage(null);
     setErrorCode(null);
+
+    // If currently on an unauthorized preview domain (like *.run.app) and not forced
+    if (!forceTry && !isAuthorizedDomain()) {
+      setIsLoading(false);
+      setErrorCode('auth/unauthorized-domain');
+      setErrorMessage(
+        `โดเมนพรีวิว (${currentHost}) ยังไม่ได้รับอนุญาตใน Firebase Console ของ rb-shutter-club-01`
+      );
+      return;
+    }
+
     try {
       const user = await signInWithGoogle();
       onLoginSuccess({
@@ -59,11 +71,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       onShowToast(`ยินดีต้อนรับ ${user.displayName || user.email || 'สมาชิกชมรม'}!`);
       onClose();
     } catch (err: any) {
-      console.error('Firebase Auth Sign-In Error:', err);
-      const code = err.code || '';
+      const code = err?.code || '';
       setErrorCode(code);
 
-      if (code === 'auth/unauthorized-domain') {
+      if (code === 'auth/unauthorized-domain' || code === 'auth/invalid-continue-uri') {
         setErrorMessage(
           `โดเมนปัจจุบัน (${currentHost}) ยังไม่ได้รับอนุญาตใน Firebase Authentication (Authorized Domains)`
         );
@@ -76,7 +87,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       } else if (code === 'auth/cancelled-popup-request') {
         // Ignored
       } else {
-        setErrorMessage(err.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบด้วย Google');
+        setErrorMessage(err?.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบด้วย Google');
       }
     } finally {
       setIsLoading(false);
@@ -89,9 +100,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     try {
       await signInWithGoogleRedirect();
     } catch (err: any) {
-      console.error('Firebase Auth Redirect Error:', err);
-      setErrorCode(err.code || '');
-      setErrorMessage(err.message || 'ไม่สามารถเริ่มการเข้าสู่ระบบแบบ Redirect ได้');
+      setErrorCode(err?.code || '');
+      setErrorMessage(err?.message || 'ไม่สามารถเริ่มการเข้าสู่ระบบแบบ Redirect ได้');
       setIsLoading(false);
     }
   };
@@ -174,25 +184,25 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               </div>
             </div>
 
-            {/* Special Diagnosis & Actions for auth/unauthorized-domain */}
-            {errorCode === 'auth/unauthorized-domain' && (
+            {/* Special Diagnosis & Actions for auth/unauthorized-domain or auth/invalid-continue-uri */}
+            {(errorCode === 'auth/unauthorized-domain' || errorCode === 'auth/invalid-continue-uri') && (
               <div className="mt-1 pt-2 border-t border-rose-200/80 flex flex-col gap-1.5 text-[11px] text-rose-800">
                 <p className="leading-snug">
                   💡 <strong>แนวทางแก้ไข:</strong>
                 </p>
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <a
                     href={VERCEL_PROD_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-between p-2 rounded-xl bg-white border border-rose-300 font-bold text-purple-700 hover:bg-purple-50 transition-colors"
+                    className="flex items-center justify-between p-2 rounded-xl bg-white border border-rose-300 font-bold text-purple-700 hover:bg-purple-50 transition-colors shadow-xs"
                   >
                     <span className="flex items-center gap-1.5 truncate">
                       <span className="material-symbols-outlined text-[16px]">open_in_new</span>
                       <span>เปิดบน Vercel Production</span>
                     </span>
                     <span className="text-[10px] bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded-md shrink-0">
-                      แนะนำ
+                      แนะนำ (ล็อกอินได้ทันที)
                     </span>
                   </a>
 
@@ -207,8 +217,25 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     <span>
                       {copiedDomain
                         ? 'คัดลอกโดเมนเรียบร้อยแล้ว!'
-                        : `คัดลอก "${currentHost}" เพื่อใส่ใน Firebase`}
+                        : `คัดลอก "${currentHost}" ไปเพิ่มใน Firebase`}
                     </span>
+                  </button>
+
+                  <button
+                    onClick={handleDemoSignIn}
+                    type="button"
+                    className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-bold transition-colors text-[11px]"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">badge</span>
+                    <span>ทดสอบด้วยบัญชีนักเรียน (Demo Login)</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleGoogleSignIn(true)}
+                    type="button"
+                    className="w-full py-1 text-center text-[10px] text-gray-500 hover:text-purple-700 underline transition-colors"
+                  >
+                    ลองเชื่อมต่อ Google อีกครั้ง (หากเพิ่มโดเมนใน Firebase แล้ว)
                   </button>
                 </div>
               </div>
@@ -229,7 +256,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         <div className="space-y-2.5 pt-1">
           {/* Main Google Popup Button */}
           <button
-            onClick={handleGoogleSignIn}
+            onClick={() => handleGoogleSignIn(false)}
             disabled={isLoading}
             className="w-full py-3 px-4 rounded-2xl bg-white border-2 border-gray-200 hover:border-purple-600 hover:bg-purple-50/40 text-gray-800 font-bold text-xs flex items-center justify-center gap-3 transition-all shadow-xs active:scale-98 disabled:opacity-50"
           >

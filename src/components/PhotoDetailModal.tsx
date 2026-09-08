@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PhotoItem } from '../types';
+import { downloadImage } from '../lib/galleryStorage';
 
 interface PhotoDetailModalProps {
   photo: PhotoItem | null;
@@ -20,8 +21,23 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
 }) => {
   const [commentInput, setCommentInput] = useState('');
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   if (!photo) return null;
+
+  const handleDownload = async () => {
+    if (isDownloading) return;
+    setIsDownloading(true);
+    onShowToast(`กำลังดาวน์โหลดและบันทึกภาพ "${photo.title}"...`);
+    try {
+      await downloadImage(photo.imageUrl, photo.title || 'rb-shutter-photo');
+      onShowToast('บันทึกภาพลงในอุปกรณ์ของคุณเรียบร้อยแล้ว!');
+    } catch {
+      onShowToast('ไม่สามารถบันทึกภาพได้โดยตรง กำลังเปิดภาพในแท็บใหม่');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const handleCommentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +59,19 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
             <span className="material-symbols-outlined text-[20px]">arrow_back</span>
             <span>แกลเลอรี</span>
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            {/* Save Photo button in header */}
+            <button
+              onClick={handleDownload}
+              title="บันทึกภาพลงเครื่อง (Save)"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-all active:scale-95"
+            >
+              <span className={`material-symbols-outlined text-[17px] ${isDownloading ? 'animate-bounce' : ''}`}>
+                download
+              </span>
+              <span>บันทึกภาพ</span>
+            </button>
+
             <button
               onClick={() => onToggleBookmark(photo.id)}
               className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
@@ -67,7 +95,7 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
         </div>
 
         {/* Hero Photo Container */}
-        <div className="relative w-full aspect-[4/5] bg-black">
+        <div className="relative w-full aspect-[4/5] bg-black group">
           <img
             src={photo.imageUrl}
             alt={photo.title}
@@ -79,6 +107,18 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
               <span>ภาพเด่นเมนเทอร์</span>
             </div>
           )}
+
+          {/* Direct Floating Save Button on image */}
+          <button
+            onClick={handleDownload}
+            className="absolute bottom-3 left-3 bg-black/60 hover:bg-emerald-700/90 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1.5 rounded-full border border-white/20 flex items-center gap-1.5 transition-all shadow-md active:scale-95"
+          >
+            <span className={`material-symbols-outlined text-[16px] ${isDownloading ? 'animate-spin' : ''}`}>
+              {isDownloading ? 'progress_activity' : 'save_alt'}
+            </span>
+            <span>บันทึกรูปภาพ</span>
+          </button>
+
           <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white text-[10px] font-mono px-2.5 py-1 rounded-full border border-white/10">
             {photo.exif.camera} • {photo.exif.aperture}
           </div>
@@ -144,13 +184,22 @@ export const PhotoDetailModal: React.FC<PhotoDetailModalProps> = ({
               <span>{photo.commentsCount} คำวิจารณ์</span>
             </div>
           </div>
-          <button
-            onClick={() => onShowToast('ส่งเหรียญรางวัล Tip ให้เพื่อนสำเร็จ! (+5 XP)')}
-            className="flex items-center gap-1 text-purple-700 hover:text-purple-900 bg-purple-50 px-2.5 py-1 rounded-full"
-          >
-            <span className="material-symbols-outlined text-[16px]">stars</span>
-            <span>ให้รางวัลเพื่อน</span>
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={handleDownload}
+              className="flex items-center gap-1 text-emerald-800 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-200 transition-colors active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[16px]">download</span>
+              <span>เซฟภาพ</span>
+            </button>
+            <button
+              onClick={() => onShowToast('ส่งเหรียญรางวัล Tip ให้เพื่อนสำเร็จ! (+5 XP)')}
+              className="flex items-center gap-1 text-purple-700 hover:text-purple-900 bg-purple-50 px-2.5 py-1 rounded-full"
+            >
+              <span className="material-symbols-outlined text-[16px]">stars</span>
+              <span>ให้รางวัลเพื่อน</span>
+            </button>
+          </div>
         </div>
 
         {/* Photo Title & Story */}

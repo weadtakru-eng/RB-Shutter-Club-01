@@ -60,6 +60,22 @@ export function isInIframe(): boolean {
 }
 
 /**
+ * Check if current domain is known to be in Firebase Authorized Domains
+ */
+export function isAuthorizedDomain(): boolean {
+  if (typeof window === 'undefined') return true;
+  const host = window.location.hostname;
+  return (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host.endsWith('.firebaseapp.com') ||
+    host.endsWith('.web.app') ||
+    host.endsWith('.vercel.app') ||
+    host.includes('vercel.app')
+  );
+}
+
+/**
  * Sign in with Google using signInWithPopup(auth, provider)
  */
 export async function signInWithGoogle(): Promise<FirebaseUser> {
@@ -67,7 +83,18 @@ export async function signInWithGoogle(): Promise<FirebaseUser> {
     const result = await signInWithPopup(auth, provider);
     return result.user;
   } catch (error: any) {
-    console.error('Firebase Google Sign-In Popup Error:', error);
+    const code = error?.code || '';
+    if (
+      code === 'auth/invalid-continue-uri' ||
+      code === 'auth/unauthorized-domain' ||
+      code === 'auth/popup-closed-by-user' ||
+      code === 'auth/popup-blocked' ||
+      code === 'auth/cancelled-popup-request'
+    ) {
+      console.warn(`[Firebase Auth notice] ${code}:`, error?.message || error);
+    } else {
+      console.warn('[Firebase Google Sign-In]:', error);
+    }
     throw error;
   }
 }
@@ -79,7 +106,7 @@ export async function signInWithGoogleRedirect(): Promise<void> {
   try {
     await signInWithRedirect(auth, provider);
   } catch (error: any) {
-    console.error('Firebase Google Sign-In Redirect Error:', error);
+    console.warn('[Firebase Google Sign-In Redirect notice]:', error?.code || error);
     throw error;
   }
 }
@@ -91,7 +118,7 @@ export async function signOutUser(): Promise<void> {
   try {
     await signOut(auth);
   } catch (error) {
-    console.error('Firebase Sign-Out Error:', error);
+    console.warn('[Firebase Sign-Out notice]:', error);
     throw error;
   }
 }

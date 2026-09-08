@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { PhotoItem } from '../types';
+import { PhotoItem, UserProfile } from '../types';
+import { downloadImage } from '../lib/galleryStorage';
 
 interface GalleryViewProps {
   photos: PhotoItem[];
+  user?: UserProfile;
   onSelectPhoto: (photo: PhotoItem) => void;
   onToggleLike: (photoId: string) => void;
   onToggleBookmark: (photoId: string) => void;
@@ -12,6 +14,7 @@ interface GalleryViewProps {
 
 export const GalleryView: React.FC<GalleryViewProps> = ({
   photos,
+  user,
   onSelectPhoto,
   onToggleLike,
   onToggleBookmark,
@@ -22,15 +25,34 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   const [activeFilter, setActiveFilter] = useState<string>('latest');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  const handleDownloadPhoto = async (e: React.MouseEvent, photo: PhotoItem) => {
+    e.stopPropagation();
+    onShowToast(`กำลังบันทึกภาพ "${photo.title}"...`);
+    try {
+      await downloadImage(photo.imageUrl, photo.title || 'rb-shutter-photo');
+      onShowToast('บันทึกภาพลงเครื่องเรียบร้อยแล้ว!');
+    } catch {
+      onShowToast('ไม่สามารถบันทึกภาพได้โดยตรง');
+    }
+  };
+
   const filterChips = [
-    { id: 'latest', label: 'ล่าสุด' },
+    { id: 'latest', label: 'ทั้งหมด' },
+    { id: 'my-uploads', label: 'ภาพของฉัน 📸' },
     { id: 'popular', label: 'ยอดนิยม 🔥' },
     { id: 'quests', label: 'จากภารกิจ' },
     { id: 'nature', label: 'ธรรมชาติ' },
     { id: 'portrait', label: 'ภาพบุคคล' },
     { id: 'creative', label: 'สร้างสรรค์' },
-    { id: 'bw', label: 'ขาวดำ' },
   ];
+
+  const userUploadsCount = photos.filter(
+    (p) =>
+      p.isUserUpload ||
+      p.authorName === user?.name ||
+      p.authorId === user?.uid ||
+      p.id.startsWith('photo-sub-')
+  ).length;
 
   const filteredPhotos = photos.filter((p) => {
     const matchesSearch =
@@ -42,6 +64,14 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
 
     if (!matchesSearch) return false;
 
+    if (activeFilter === 'my-uploads') {
+      return (
+        p.isUserUpload ||
+        p.authorName === user?.name ||
+        p.authorId === user?.uid ||
+        p.id.startsWith('photo-sub-')
+      );
+    }
     if (activeFilter === 'popular') return p.likes > 30;
     if (activeFilter === 'nature') return p.questCategory === 'nature';
     if (activeFilter === 'portrait') return p.questCategory === 'portrait';
@@ -57,12 +87,12 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-gray-900 tracking-tight">แกลเลอรีภาพถ่าย</h1>
             <span className="text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-              <span className="material-symbols-outlined text-[12px]">verified_user</span>
-              พื้นที่ปลอดภัย
+              <span className="material-symbols-outlined text-[12px]">cloud_done</span>
+              คลังจัดเก็บถาวร
             </span>
           </div>
           <p className="text-xs text-gray-500 mt-0.5">
-            ภาพถ่ายฝีมือนักเรียน คำวิจารณ์เชิงสร้างสรรค์ และภาพเด่นจากเมนเทอร์
+            ภาพถ่ายฝีมือนักเรียน ภาพจากภารกิจ และผลงานที่จัดเก็บในชมรม
           </p>
         </div>
 
@@ -93,6 +123,30 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
         </div>
       </div>
 
+      {/* Direct Upload & Storage Action Strip */}
+      <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-800 rounded-2xl p-3 text-white flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-purple-200 shrink-0">
+            <span className="material-symbols-outlined text-[20px]">add_photo_alternate</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="font-bold text-xs">จัดเก็บภาพเข้าแกลเลอรี</span>
+            <span className="text-[10px] text-purple-200">
+              {userUploadsCount > 0
+                ? `คุณบันทึกผลงานไว้แล้ว ${userUploadsCount} ภาพ`
+                : 'อัปโหลดภาพของคุณเพื่อจัดเก็บและแชร์ในชมรม'}
+            </span>
+          </div>
+        </div>
+        <button
+          onClick={onOpenShutter}
+          className="px-3.5 py-1.5 bg-white text-purple-900 hover:bg-purple-50 font-bold text-xs rounded-xl shadow-xs active:scale-95 transition-all flex items-center gap-1 shrink-0"
+        >
+          <span className="material-symbols-outlined text-[16px]">upload</span>
+          <span>อัปโหลดภาพ</span>
+        </button>
+      </div>
+
       {/* Search Input */}
       <div className="flex items-center gap-2 w-full">
         <div className="flex-1 bg-white rounded-full px-3.5 py-2.5 flex items-center gap-2 shadow-xs border border-gray-100 focus-within:ring-2 focus-within:ring-purple-200 transition-all">
@@ -120,13 +174,20 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
           <button
             key={chip.id}
             onClick={() => setActiveFilter(chip.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all active:scale-95 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all active:scale-95 flex items-center gap-1 ${
               activeFilter === chip.id
                 ? 'bg-purple-700 text-white shadow-xs'
                 : 'bg-white text-gray-600 hover:text-gray-900 border border-gray-100'
             }`}
           >
-            {chip.label}
+            <span>{chip.label}</span>
+            {chip.id === 'my-uploads' && userUploadsCount > 0 && (
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                activeFilter === 'my-uploads' ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-700'
+              }`}>
+                {userUploadsCount}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -166,6 +227,23 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                       <span>ชีวิตชมรม</span>
                     </div>
                   )}
+
+                  {/* User Uploaded & Stored Badge */}
+                  {photo.isUserUpload && (
+                    <div className="absolute top-2 right-2 bg-emerald-600/90 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                      <span className="material-symbols-outlined text-[11px]">save</span>
+                      <span>บันทึกแล้ว</span>
+                    </div>
+                  )}
+
+                  {/* Floating Direct Save Button on hover */}
+                  <button
+                    onClick={(e) => handleDownloadPhoto(e, photo)}
+                    title="บันทึกภาพลงเครื่อง (Save)"
+                    className={`absolute ${photo.isUserUpload ? 'top-8' : 'top-2'} right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-emerald-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md active:scale-90 z-10`}
+                  >
+                    <span className="material-symbols-outlined text-[15px]">download</span>
+                  </button>
 
                   {/* Bottom Image Stamp */}
                   <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-white text-[10px] drop-shadow">
@@ -214,22 +292,33 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                       <span>{photo.commentsCount}</span>
                     </div>
 
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggleBookmark(photo.id);
-                      }}
-                      className={`transition-colors ${
-                        photo.isBookmarked ? 'text-purple-700' : 'text-gray-400 hover:text-purple-700'
-                      }`}
-                    >
-                      <span
-                        className="material-symbols-outlined text-[15px]"
-                        style={{ fontVariationSettings: photo.isBookmarked ? "'FILL' 1" : "'FILL' 0" }}
+                    <div className="flex items-center gap-1">
+                      {/* Save to Device button */}
+                      <button
+                        onClick={(e) => handleDownloadPhoto(e, photo)}
+                        title="บันทึกภาพลงเครื่อง (Save Photo)"
+                        className="p-1 rounded-full text-gray-400 hover:text-emerald-700 hover:bg-emerald-50 transition-colors active:scale-90"
                       >
-                        bookmark
-                      </span>
-                    </button>
+                        <span className="material-symbols-outlined text-[16px]">download</span>
+                      </button>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleBookmark(photo.id);
+                        }}
+                        className={`transition-colors ${
+                          photo.isBookmarked ? 'text-purple-700' : 'text-gray-400 hover:text-purple-700'
+                        }`}
+                      >
+                        <span
+                          className="material-symbols-outlined text-[15px]"
+                          style={{ fontVariationSettings: photo.isBookmarked ? "'FILL' 1" : "'FILL' 0" }}
+                        >
+                          bookmark
+                        </span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -264,6 +353,12 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                     <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                       <span className="material-symbols-outlined text-[12px]">star</span>
                       ภาพเด่นเมนเทอร์
+                    </span>
+                  )}
+                  {photo.isUserUpload && (
+                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[12px]">cloud_done</span>
+                      บันทึกในแกลเลอรี
                     </span>
                   )}
                 </div>
@@ -314,20 +409,31 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                     </button>
                   </div>
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleBookmark(photo.id);
-                    }}
-                    className={photo.isBookmarked ? 'text-purple-700' : 'text-gray-400 hover:text-gray-700'}
-                  >
-                    <span
-                      className="material-symbols-outlined text-[22px]"
-                      style={{ fontVariationSettings: photo.isBookmarked ? "'FILL' 1" : "'FILL' 0" }}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => handleDownloadPhoto(e, photo)}
+                      title="บันทึกภาพลงเครื่อง (Save Photo)"
+                      className="flex items-center gap-1 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-full text-xs font-bold border border-emerald-200 transition-all active:scale-95"
                     >
-                      bookmark
-                    </span>
-                  </button>
+                      <span className="material-symbols-outlined text-[16px]">download</span>
+                      <span>เซฟภาพ</span>
+                    </button>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleBookmark(photo.id);
+                      }}
+                      className={photo.isBookmarked ? 'text-purple-700' : 'text-gray-400 hover:text-gray-700'}
+                    >
+                      <span
+                        className="material-symbols-outlined text-[22px]"
+                        style={{ fontVariationSettings: photo.isBookmarked ? "'FILL' 1" : "'FILL' 0" }}
+                      >
+                        bookmark
+                      </span>
+                    </button>
+                  </div>
                 </div>
 
                 <h4 className="font-extrabold text-sm text-gray-900 mt-1">{photo.title}</h4>
@@ -339,6 +445,34 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Empty State when no photos match filter */}
+      {filteredPhotos.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-12 px-4 text-center bg-white rounded-3xl border border-dashed border-gray-200">
+          <div className="w-14 h-14 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mb-3">
+            <span className="material-symbols-outlined text-[28px]">photo_library</span>
+          </div>
+          <h3 className="font-bold text-sm text-gray-900 mb-1">
+            {activeFilter === 'my-uploads'
+              ? 'คุณยังไม่มีภาพถ่ายที่จัดเก็บไว้'
+              : 'ไม่พบภาพถ่ายที่ตรงกับการค้นหา'}
+          </h3>
+          <p className="text-xs text-gray-500 max-w-xs mb-4">
+            {activeFilter === 'my-uploads'
+              ? 'อัปโหลดภาพถ่ายของคุณเพื่อบันทึกลงในคลังแกลเลอรีชมรม'
+              : 'ลองเปลี่ยนคำค้นหา หรือเลือกหมวดหมู่อื่นเพื่อดูภาพผลงาน'}
+          </p>
+          {activeFilter === 'my-uploads' && (
+            <button
+              onClick={onOpenShutter}
+              className="px-4 py-2 bg-purple-700 text-white rounded-full text-xs font-bold shadow-xs hover:bg-purple-800 transition-all flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-[16px]">upload</span>
+              <span>อัปโหลดภาพถ่ายแรกของคุณ</span>
+            </button>
+          )}
         </div>
       )}
 

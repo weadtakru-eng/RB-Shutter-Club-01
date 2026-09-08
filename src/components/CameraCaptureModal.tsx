@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { PhotoItem } from '../types';
+import { PhotoItem, UserProfile } from '../types';
+import { compressImage, downloadImage } from '../lib/galleryStorage';
 
 interface CameraCaptureModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedChallengeTitle?: string;
+  user?: UserProfile;
   onSubmitSuccess: (newPhoto: Partial<PhotoItem>, xpEarned: number) => void;
 }
 
@@ -12,6 +14,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
   isOpen,
   onClose,
   selectedChallengeTitle = 'Color Hunt – Blue',
+  user,
   onSubmitSuccess,
 }) => {
   const samplePhotos = [
@@ -37,6 +40,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
 
   const [currentSampleIndex, setCurrentSampleIndex] = useState(0);
   const [customImage, setCustomImage] = useState<string | null>(null);
+  const [photoTitle, setPhotoTitle] = useState<string>(samplePhotos[0].title);
   const [aspectRatio, setAspectRatio] = useState<'aspect-[4/5]' | 'aspect-[3/4]' | 'aspect-square'>('aspect-[4/5]');
   const [rotation, setRotation] = useState(0);
   const [caption, setCaption] = useState(
@@ -44,6 +48,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
   );
   const [visibility, setVisibility] = useState<'members' | 'mentors'>('members');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
 
   if (!isOpen) return null;
 
@@ -52,19 +57,29 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
 
   const handleCycleSample = () => {
     setCustomImage(null);
-    setCurrentSampleIndex((prev) => (prev + 1) % samplePhotos.length);
+    const nextIdx = (currentSampleIndex + 1) % samplePhotos.length;
+    setCurrentSampleIndex(nextIdx);
+    setPhotoTitle(samplePhotos[nextIdx].title);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setCustomImage(event.target.result as string);
+      setIsProcessingFile(true);
+      try {
+        const compressedUrl = await compressImage(file, 1280, 0.82);
+        setCustomImage(compressedUrl);
+        // Automatically suggest clean title from filename if title was default sample
+        const isDefaultSampleTitle = samplePhotos.some((s) => s.title === photoTitle);
+        if (!photoTitle || isDefaultSampleTitle) {
+          const rawName = file.name.replace(/\.[^/.]+$/, '').trim();
+          setPhotoTitle(rawName || 'ผลงานภาพถ่ายชิ้นใหม่');
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        console.error('Image compression error:', err);
+      } finally {
+        setIsProcessingFile(false);
+      }
     }
   };
 
@@ -82,10 +97,11 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
+      const chosenTitle = photoTitle.trim() || (customImage ? 'ผลงานภาพถ่ายชิ้นใหม่' : currentMeta.title);
       onSubmitSuccess(
         {
           id: `photo-sub-${Date.now()}`,
-          title: currentMeta.title,
+          title: chosenTitle,
           imageUrl: currentPhotoUrl,
           questTitle: selectedChallengeTitle,
           aspectRatio,
@@ -100,16 +116,23 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
           },
           likes: 1,
           commentsCount: 0,
-          authorName: 'Praew Kanya',
-          authorGrade: 'Gr.11',
-          authorInitial: 'P',
-          avatarColorClass: 'bg-primary-fixed text-primary',
+          authorName: user?.name || 'Praew Kanya',
+          authorGrade: user?.grade || 'ม.5',
+          authorInitial: (user?.name || 'P').charAt(0).toUpperCase(),
+          authorAvatar: user?.avatarUrl,
+          avatarColorClass: 'bg-purple-100 text-purple-700',
           isVerified: true,
-          tags: ['#ColorHuntBlue', '#RBShutterClub', '#Fujifilm'],
+          isUserUpload: true,
+          uploadedAt: new Date().toISOString(),
+          tags: ['#RBShutterClub', '#แกลเลอรีภาพถ่าย', '#ชัตเตอร์ราชินีบน'],
         },
         50
       );
     }, 600);
+  };
+
+  const handleSaveToDevice = async () => {
+    await downloadImage(currentPhotoUrl, photoTitle || 'rb-shutter-capture');
   };
 
   return (
@@ -233,11 +256,37 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
                 className="hidden"
               />
             </label>
+
+            {/* Direct Save Image button */}
+            <button
+              type="button"
+              onClick={handleSaveToDevice}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 text-xs font-semibold transition-colors border border-emerald-700/50 active:scale-95"
+              title="บันทึกภาพลงเครื่อง (Save to Device)"
+            >
+              <span className="material-symbols-outlined text-[16px]">download</span>
+              <span>เซฟภาพ</span>
+            </button>
           </div>
         </div>
 
         {/* Metadata & Details Form */}
-        <div className="px-4 space-y-4">
+        <div className="px-4 space-y-3.5">
+          {/* Photo Title Input */}
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-gray-200">ชื่อภาพถ่ายผลงาน</label>
+              <span className="text-[10px] text-purple-400 font-medium">บันทึกสู่แกลเลอรี</span>
+            </div>
+            <input
+              type="text"
+              value={photoTitle}
+              onChange={(e) => setPhotoTitle(e.target.value)}
+              placeholder="เช่น แสงยามเย็นริมระเบียง, จังหวะกระโดดชัชวาล..."
+              className="w-full bg-[#1b1f2e] border border-gray-700/70 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all font-medium"
+            />
+          </div>
+
           {/* Caption & Story Input */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
@@ -255,6 +304,21 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
               placeholder="เล่าเรื่องราวเกี่ยวกับมุมมองภาพ เทคนิค แสง หรือสิ่งที่ประทับใจ..."
               className="w-full bg-[#1b1f2e] border border-gray-700/70 rounded-xl p-3 text-xs text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
             />
+          </div>
+
+          {/* Gallery Storage Guarantee Banner */}
+          <div className="flex items-center gap-2.5 bg-emerald-950/40 border border-emerald-800/50 p-2.5 rounded-xl text-emerald-200 text-xs">
+            <span className="material-symbols-outlined text-emerald-400 text-[20px] shrink-0">
+              cloud_done
+            </span>
+            <div className="flex flex-col">
+              <span className="font-bold text-[11px] text-emerald-300">
+                จัดเก็บเข้าสู่คลังภาพ (Gallery) อัตโนมัติ
+              </span>
+              <span className="text-[10px] text-emerald-400/80">
+                ภาพนี้จะถูกบันทึกไว้ในคลังแกลเลอรีของชมรม และแสดงในแท็บ "ภาพของฉัน" ทันทีที่ส่ง
+              </span>
+            </div>
           </div>
 
           {/* Auto-detected metadata pill */}
@@ -323,7 +387,16 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
         </div>
 
         {/* Modal Bottom Action Bar */}
-        <div className="mt-6 px-4 flex items-center gap-3">
+        <div className="mt-6 px-4 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleSaveToDevice}
+            className="py-3 px-3.5 rounded-xl bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-700/50 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shrink-0 active:scale-95"
+            title="บันทึกภาพลงในอุปกรณ์ของคุณ (Save)"
+          >
+            <span className="material-symbols-outlined text-[17px]">download</span>
+            <span>เซฟภาพ</span>
+          </button>
           <button
             onClick={onClose}
             className="flex-1 py-3 rounded-xl bg-gray-800/80 hover:bg-gray-700 text-gray-300 font-bold text-xs transition-colors"
