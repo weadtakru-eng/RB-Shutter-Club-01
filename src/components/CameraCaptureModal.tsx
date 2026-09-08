@@ -1,21 +1,26 @@
 import React, { useState } from 'react';
 import { PhotoItem, UserProfile } from '../types';
 import { compressImage, downloadImage } from '../lib/galleryStorage';
+import { submitChallengePhoto } from '../lib/challengeService';
 
 interface CameraCaptureModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedChallengeTitle?: string;
+  selectedChallengeId?: string;
   user?: UserProfile;
   onSubmitSuccess: (newPhoto: Partial<PhotoItem>, xpEarned: number) => void;
+  onShowToast?: (msg: string) => void;
 }
 
 export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
   isOpen,
   onClose,
   selectedChallengeTitle = 'Color Hunt – Blue',
+  selectedChallengeId,
   user,
   onSubmitSuccess,
+  onShowToast,
 }) => {
   const samplePhotos = [
     {
@@ -93,16 +98,49 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
     else setAspectRatio('aspect-[4/5]');
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!user?.isLoggedIn || !user.uid) {
+      if (onShowToast) onShowToast('กรุณาเข้าสู่ระบบ Google ก่อนส่งผลงานภาพถ่าย');
+      return;
+    }
+    if (!currentPhotoUrl) {
+      if (onShowToast) onShowToast('กรุณาเลือกหรือถ่ายภาพก่อนส่งผลงาน');
+      return;
+    }
+
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
       const chosenTitle = photoTitle.trim() || (customImage ? 'ผลงานภาพถ่ายชิ้นใหม่' : currentMeta.title);
+      const sub = await submitChallengePhoto({
+        userId: user.uid,
+        studentName: user.name || 'Praew Kanya',
+        studentGrade: user.grade || 'ม.5',
+        studentAvatar: user.avatarUrl || null,
+        challengeId: selectedChallengeId || 'ch-color-hunt-blue',
+        challengeTitle: selectedChallengeTitle,
+        imageData: currentPhotoUrl,
+        caption,
+        visibility: visibility === 'members' ? 'club' : 'private',
+        aspectRatio,
+        exif: {
+          camera: 'Fujifilm X-T30 II',
+          lens: 'XF 27mm f/2.8 R WR',
+          focalLength: '27mm',
+          aperture: 'f/2.8',
+          shutterSpeed: '1/400s',
+          iso: 'ISO 160',
+        },
+      });
+
+      if (onShowToast) {
+        onShowToast('ส่งผลงานภารกิจสำเร็จแล้ว! รออาจารย์/แอดมินตรวจผลงาน');
+      }
+
       onSubmitSuccess(
         {
-          id: `photo-sub-${Date.now()}`,
+          id: sub.id,
           title: chosenTitle,
-          imageUrl: currentPhotoUrl,
+          imageUrl: sub.imageURL,
           questTitle: selectedChallengeTitle,
           aspectRatio,
           visualStory: caption,
@@ -114,21 +152,28 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
             shutterSpeed: '1/400s',
             iso: 'ISO 160',
           },
-          likes: 1,
+          likes: 0,
           commentsCount: 0,
-          authorName: user?.name || 'Praew Kanya',
-          authorGrade: user?.grade || 'ม.5',
-          authorInitial: (user?.name || 'P').charAt(0).toUpperCase(),
-          authorAvatar: user?.avatarUrl,
+          authorName: user.name || 'Praew Kanya',
+          authorGrade: user.grade || 'ม.5',
+          authorInitial: (user.name || 'P').charAt(0).toUpperCase(),
+          authorAvatar: user.avatarUrl,
           avatarColorClass: 'bg-purple-100 text-purple-700',
-          isVerified: true,
+          isVerified: false,
           isUserUpload: true,
           uploadedAt: new Date().toISOString(),
-          tags: ['#RBShutterClub', '#แกลเลอรีภาพถ่าย', '#ชัตเตอร์ราชินีบน'],
+          tags: ['#RBShutterClub', `#${selectedChallengeTitle.replace(/\s+/g, '')}`],
         },
-        50
+        0
       );
-    }, 600);
+    } catch (err: any) {
+      console.error('Submission failed:', err);
+      if (onShowToast) {
+        onShowToast(err?.message || 'เกิดข้อผิดพลาดในการส่งผลงาน');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSaveToDevice = async () => {

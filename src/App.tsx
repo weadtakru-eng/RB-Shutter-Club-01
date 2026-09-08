@@ -16,6 +16,25 @@ import {
   subscribeToGalleryPhotos,
   persistPhotoToGallery,
 } from './lib/galleryStorage';
+import {
+  syncUserOnAuth,
+  subscribeToUserProfile,
+  updateUserProfile,
+  addXP,
+  incrementUserStats,
+  subscribeToLeaderboard,
+  getLevelProgress,
+  LeaderboardEntry,
+} from './lib/userService';
+import {
+  subscribeToChallenges,
+  subscribeToUserParticipants,
+  subscribeToSubmissions,
+  startChallengeMission,
+  ChallengeDocument,
+  ChallengeParticipant,
+  SubmissionDocument,
+} from './lib/challengeService';
 
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
@@ -25,6 +44,8 @@ import { GalleryView } from './components/GalleryView';
 import { PhotoDetailModal } from './components/PhotoDetailModal';
 import { CameraCaptureModal } from './components/CameraCaptureModal';
 import { MissionCompleteModal } from './components/MissionCompleteModal';
+import { ChallengeDetailModal } from './components/ChallengeDetailModal';
+import { ReviewSubmissionsModal } from './components/ReviewSubmissionsModal';
 import { LeaderboardView } from './components/LeaderboardView';
 import { AchievementsView } from './components/AchievementsView';
 import { ActivitiesView } from './components/ActivitiesView';
@@ -39,13 +60,20 @@ export default function App() {
   const [user, setUser] = useState<UserProfile>(INITIAL_USER);
   const [photos, setPhotos] = useState<PhotoItem[]>(INITIAL_PHOTOS);
   const [challenges, setChallenges] = useState<ChallengeItem[]>(INITIAL_CHALLENGES);
+  const [firestoreChallenges, setFirestoreChallenges] = useState<ChallengeDocument[]>([]);
+  const [userParticipants, setUserParticipants] = useState<Record<string, ChallengeParticipant>>({});
+  const [submissions, setSubmissions] = useState<SubmissionDocument[]>([]);
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [leaderboardMembers, setLeaderboardMembers] = useState<LeaderboardEntry[]>([]);
 
   // Modals
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isShutterOpen, setIsShutterOpen] = useState(false);
   const [shutterChallengeTitle, setShutterChallengeTitle] = useState('Color Hunt – Blue');
+  const [shutterChallengeId, setShutterChallengeId] = useState('ch-color-hunt-blue');
+  const [selectedChallengeForDetail, setSelectedChallengeForDetail] = useState<ChallengeDocument | null>(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isMissionCompleteOpen, setIsMissionCompleteOpen] = useState(false);
   const [lastSubmittedPhoto, setLastSubmittedPhoto] = useState<Partial<PhotoItem> | undefined>(undefined);
   const [selectedDetailPhoto, setSelectedDetailPhoto] = useState<PhotoItem | null>(null);
@@ -57,6 +85,62 @@ export default function App() {
     setTimeout(() => {
       setToastMessage(null);
     }, 3000);
+  };
+
+  // Helper to synchronize authenticated user with Firestore
+  const handleUserAuthenticated = async (u: {
+    uid: string;
+    email: string | null;
+    displayName: string | null;
+    photoURL: string | null;
+  }) => {
+    try {
+      const firestoreUser = await syncUserOnAuth(u);
+      const progress = getLevelProgress(firestoreUser.xp || 0);
+
+      setUser((prev) => ({
+        ...prev,
+        uid: firestoreUser.uid,
+        isLoggedIn: true,
+        name: firestoreUser.displayName || prev.name,
+        thaiName: firestoreUser.thaiName || firestoreUser.displayName || prev.thaiName,
+        email: firestoreUser.email || prev.email,
+        avatarUrl: firestoreUser.photoURL || undefined,
+        grade: firestoreUser.grade || prev.grade,
+        room: firestoreUser.room || prev.room,
+        role:
+          firestoreUser.role === 'teacher'
+            ? 'อาจารย์ที่ปรึกษา'
+            : firestoreUser.role === 'admin'
+            ? 'ผู้ดูแลระบบ'
+            : 'สมาชิกชมรม',
+        cameraGear: firestoreUser.cameraGear || prev.cameraGear,
+        bio: firestoreUser.bio || prev.bio,
+        studentId: firestoreUser.studentId || prev.studentId,
+        level: progress.level,
+        levelTitle: progress.title,
+        currentXP: firestoreUser.xp || 0,
+        targetXP: progress.nextLevelXP,
+        photosCount:
+          typeof firestoreUser.photoCount === 'number'
+            ? firestoreUser.photoCount
+            : prev.photosCount,
+        questsCompleted:
+          typeof firestoreUser.completedChallenges === 'number'
+            ? firestoreUser.completedChallenges
+            : prev.questsCompleted,
+        badgesCount:
+          typeof firestoreUser.badgeCount === 'number'
+            ? firestoreUser.badgeCount
+            : prev.badgesCount,
+        currentStreak:
+          typeof firestoreUser.currentStreak === 'number'
+            ? firestoreUser.currentStreak
+            : prev.currentStreak,
+      }));
+    } catch (err) {
+      console.error('Error syncing user on auth:', err);
+    }
   };
 
   // Listen to Firebase Auth state & Handle Redirect result
@@ -74,15 +158,7 @@ export default function App() {
       .then((result) => {
         if (result && result.user) {
           const u = result.user;
-          setUser((prev) => ({
-            ...prev,
-            uid: u.uid,
-            name: u.displayName || prev.name,
-            thaiName: u.displayName || prev.thaiName,
-            email: u.email || prev.email,
-            avatarUrl: u.photoURL || undefined,
-            isLoggedIn: true,
-          }));
+          handleUserAuthenticated(u);
           setCurrentTab('challenges'); // นำผู้ใช้ไปหน้า Home (ภารกิจ)
           showToast(`ยินดีต้อนรับ ${u.displayName || u.email || 'สมาชิกชมรม'}!`);
         }
@@ -97,20 +173,71 @@ export default function App() {
 
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        setUser((prev) => ({
-          ...prev,
-          uid: firebaseUser.uid,
-          name: firebaseUser.displayName || prev.name,
-          thaiName: firebaseUser.displayName || prev.thaiName,
-          email: firebaseUser.email || prev.email,
-          avatarUrl: firebaseUser.photoURL || undefined,
-          isLoggedIn: true,
-        }));
+        handleUserAuthenticated(firebaseUser);
       }
     });
 
     return () => unsubscribe();
   }, []);
+
+  // Listen for real-time user profile updates from Firestore
+  useEffect(() => {
+    if (!user.uid || !user.isLoggedIn) return;
+
+    const unsubscribe = subscribeToUserProfile(user.uid, (freshUser) => {
+      const progress = getLevelProgress(freshUser.xp || 0);
+      setUser((prev) => ({
+        ...prev,
+        name: freshUser.displayName || prev.name,
+        thaiName: freshUser.thaiName || freshUser.displayName || prev.thaiName,
+        avatarUrl: freshUser.photoURL || undefined,
+        currentXP: typeof freshUser.xp === 'number' ? freshUser.xp : prev.currentXP,
+        level: progress.level,
+        levelTitle: progress.title,
+        targetXP: progress.nextLevelXP,
+        photosCount:
+          typeof freshUser.photoCount === 'number'
+            ? freshUser.photoCount
+            : prev.photosCount,
+        questsCompleted:
+          typeof freshUser.completedChallenges === 'number'
+            ? freshUser.completedChallenges
+            : prev.questsCompleted,
+        badgesCount:
+          typeof freshUser.badgeCount === 'number'
+            ? freshUser.badgeCount
+            : prev.badgesCount,
+        currentStreak:
+          typeof freshUser.currentStreak === 'number'
+            ? freshUser.currentStreak
+            : prev.currentStreak,
+        grade: freshUser.grade || prev.grade,
+        room: freshUser.room || prev.room,
+        cameraGear: freshUser.cameraGear || prev.cameraGear,
+        bio: freshUser.bio || prev.bio,
+      }));
+    });
+
+    return () => unsubscribe();
+  }, [user.uid, user.isLoggedIn]);
+
+  // Listen for real-time Leaderboard rankings from Firestore
+  useEffect(() => {
+    const unsubscribe = subscribeToLeaderboard((liveMembers) => {
+      setLeaderboardMembers(liveMembers);
+      if (user.uid) {
+        const found = liveMembers.find((m) => m.uid === user.uid);
+        if (found) {
+          setUser((prev) => ({
+            ...prev,
+            rank: found.rank,
+          }));
+        }
+      }
+    }, user.uid);
+
+    return () => unsubscribe();
+  }, [user.uid]);
 
   // Listen for gallery photos synchronization across Firestore and LocalStorage
   useEffect(() => {
@@ -120,22 +247,103 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  const isTeacherOrAdmin =
+    user.role === 'อาจารย์ที่ปรึกษา' ||
+    user.role === 'ผู้ดูแลระบบ' ||
+    user.email === 'edtech@rajinibon.ac.th';
+
+  // Helper to map Firestore Challenge Document to UI ChallengeItem
+  const mapFirestoreToChallengeItem = (
+    c: ChallengeDocument,
+    participant?: ChallengeParticipant
+  ): ChallengeItem => {
+    const isCompleted = participant?.status === 'approved';
+    const isSubmitted = participant?.status === 'submitted';
+    const isStarted = participant?.status === 'started';
+
+    const catKey = (c.categoryKey ||
+      (c.category?.toLowerCase().includes('shape')
+        ? 'shape'
+        : c.category?.toLowerCase().includes('color')
+        ? 'color'
+        : c.category?.toLowerCase().includes('portrait')
+        ? 'portrait'
+        : c.category?.toLowerCase().includes('nature')
+        ? 'nature'
+        : c.category?.toLowerCase().includes('school')
+        ? 'school'
+        : c.category?.toLowerCase().includes('night')
+        ? 'night'
+        : 'creative')) as any;
+
+    return {
+      id: c.id,
+      title: c.title,
+      category: catKey,
+      categoryLabel: c.categoryLabel || c.category || 'ภารกิจ',
+      difficulty: c.difficulty || 'Medium',
+      xpReward: c.points || 50,
+      imageUrl: c.coverImage,
+      description: c.description,
+      participantsCount: c.participantsCount || 20,
+      timeRemaining: c.deadline ? `เหลือเวลา ${c.deadline}` : 'สัปดาห์นี้',
+      isFeatured: !!c.isFeatured,
+      isNew: !!c.isNew,
+      isInProgress: isStarted || isSubmitted,
+      isCompleted: isCompleted,
+      progressText: isCompleted
+        ? 'ภารกิจสำเร็จแล้ว (+XP)'
+        : isSubmitted
+        ? 'ส่งผลงานแล้ว รอตรวจ'
+        : isStarted
+        ? 'กำลังทำภารกิจ'
+        : undefined,
+      progressFraction: isCompleted ? 1 : isSubmitted ? 0.75 : isStarted ? 0.3 : 0,
+      mentorFeedback: isCompleted ? 'ผลงานผ่านการอนุมัติเรียบร้อยแล้ว' : undefined,
+    };
+  };
+
+  // Listen for real-time challenges from Firestore
+  useEffect(() => {
+    const unsubscribe = subscribeToChallenges((fChallenges) => {
+      setFirestoreChallenges(fChallenges);
+      if (fChallenges && fChallenges.length > 0) {
+        const mapped = fChallenges.map((c) =>
+          mapFirestoreToChallengeItem(c, userParticipants[c.id])
+        );
+        setChallenges(mapped);
+      }
+    });
+    return () => unsubscribe();
+  }, [userParticipants]);
+
+  // Listen for user challenge participants from Firestore
+  useEffect(() => {
+    if (!user.uid || !user.isLoggedIn) return;
+    const unsubscribe = subscribeToUserParticipants(user.uid, (pMap) => {
+      setUserParticipants(pMap);
+    });
+    return () => unsubscribe();
+  }, [user.uid, user.isLoggedIn]);
+
+  // Listen for real-time photo submissions (admin sees all, member sees own)
+  useEffect(() => {
+    const targetUserId = isTeacherOrAdmin ? null : user.uid ? user.uid : null;
+    const unsubscribe = subscribeToSubmissions(targetUserId, (subs) => {
+      setSubmissions(subs);
+    });
+    return () => unsubscribe();
+  }, [user.uid, isTeacherOrAdmin]);
+
+  const pendingReviewsCount = submissions.filter((s) => s.status === 'pending').length;
+
   const handleLoginSuccess = (googleUser: {
     displayName: string | null;
     email: string | null;
     photoURL: string | null;
     uid: string;
   }) => {
-    setUser((prev) => ({
-      ...prev,
-      uid: googleUser.uid,
-      name: googleUser.displayName || prev.name,
-      thaiName: googleUser.displayName || prev.thaiName,
-      email: googleUser.email || prev.email,
-      avatarUrl: googleUser.photoURL || undefined,
-      isLoggedIn: true,
-    }));
-    // Requirement 11: นำผู้ใช้ไปหน้า Home (Challenges) ทันทีหลังล็อกอินสำเร็จ
+    handleUserAuthenticated(googleUser);
     setCurrentTab('challenges');
   };
 
@@ -145,11 +353,11 @@ export default function App() {
     } catch (e) {
       console.error(e);
     }
-    setUser((prev) => ({
-      ...prev,
+    setUser({
+      ...INITIAL_USER,
       isLoggedIn: false,
       avatarUrl: undefined,
-    }));
+    });
     showToast('ออกจากระบบเรียบร้อยแล้ว');
   };
 
@@ -241,9 +449,54 @@ export default function App() {
   };
 
   // Open Shutter Capture
-  const handleOpenShutterForChallenge = (title: string) => {
+  const handleOpenShutterForChallenge = (title: string, challengeId?: string) => {
+    const targetId =
+      challengeId ||
+      firestoreChallenges.find((c) => c.title === title)?.id ||
+      'ch-color-hunt-blue';
     setShutterChallengeTitle(title);
+    setShutterChallengeId(targetId);
+
+    if (user.uid && user.isLoggedIn && targetId) {
+      startChallengeMission(user.uid, targetId).catch((err) => {
+        console.warn('Start mission error:', err);
+      });
+    }
+
     setIsShutterOpen(true);
+  };
+
+  const handleSelectChallengeDetail = (challenge: ChallengeItem | ChallengeDocument) => {
+    const found = firestoreChallenges.find(
+      (c) => c.id === challenge.id || c.title === challenge.title
+    );
+    if (found) {
+      setSelectedChallengeForDetail(found);
+    } else {
+      setSelectedChallengeForDetail({
+        id: challenge.id,
+        title: challenge.title,
+        description: challenge.description,
+        category: (challenge as any).categoryLabel || 'ภารกิจถ่ายภาพ',
+        categoryKey: (challenge as any).category || 'color',
+        points: (challenge as any).xpReward || 50,
+        deadline: (challenge as any).timeRemaining || 'สัปดาห์นี้',
+        coverImage: (challenge as any).imageUrl,
+        difficulty: (challenge as any).difficulty || 'Medium',
+        rules: [
+          'ถ่ายภาพด้วยอุปกรณ์สมาร์ตโฟนหรือกล้องถ่ายภาพ',
+          'ภาพต้องสื่อถึงโจทย์ได้อย่างชัดเจนและสร้างสรรค์',
+          'รักษาบรรยากาศความสุภาพและความปลอดภัยในโรงเรียน',
+        ],
+        tips: [
+          'มองหาทิศทางของแสงที่ตกกระทบวัตถุ',
+          'ทดลองเปลี่ยนมุมมองจากระดับสายตาปกติเพื่อสร้างความน่าสนใจ',
+        ],
+        exampleImages: [(challenge as any).imageUrl],
+        status: 'active',
+        participantsCount: (challenge as any).participantsCount || 20,
+      });
+    }
   };
 
   // Submission Completed
@@ -251,14 +504,36 @@ export default function App() {
     setIsShutterOpen(false);
     setLastSubmittedPhoto(newPhoto);
 
-    // Update User XP & Stats
-    setUser((prev) => ({
-      ...prev,
-      currentXP: prev.currentXP + xpEarned,
-      photosCount: prev.photosCount + 1,
-      questsCompleted: prev.questsCompleted + 1,
-      rank: Math.max(1, prev.rank - 1),
-    }));
+    // Optimistically update User XP & Stats in UI
+    setUser((prev) => {
+      const nextXP = prev.currentXP + xpEarned;
+      const progress = getLevelProgress(nextXP);
+      return {
+        ...prev,
+        currentXP: nextXP,
+        level: progress.level,
+        levelTitle: progress.title,
+        targetXP: progress.nextLevelXP,
+        photosCount: prev.photosCount + 1,
+      };
+    });
+
+    // Atomic Firestore Transaction for XP if immediately awarded
+    if (xpEarned > 0 && user.uid && user.isLoggedIn) {
+      addXP(user.uid, xpEarned, shutterChallengeTitle || 'ภารกิจถ่ายภาพ', 'challenge_submission')
+        .then((res) => {
+          if (res.leveledUp) {
+            showToast(`🎉 ยินดีด้วย! คุณเลื่อนระดับขึ้นเป็น Level ${res.newLevel}!`);
+          }
+        })
+        .catch((err) => {
+          console.warn('XP transaction deferred/offline:', err);
+        });
+
+      incrementUserStats(user.uid, {
+        photoIncrement: 1,
+      });
+    }
 
     // Add to photos list & persist to gallery storage
     if (newPhoto.title && newPhoto.imageUrl) {
@@ -274,7 +549,7 @@ export default function App() {
         avatarColorClass: 'bg-primary-fixed text-primary',
         questTitle: shutterChallengeTitle,
         questCategory: 'color',
-        likes: 1,
+        likes: 0,
         commentsCount: 0,
         aspectRatio: (newPhoto.aspectRatio as any) || 'aspect-[4/5]',
         isLiked: false,
@@ -299,19 +574,18 @@ export default function App() {
       });
 
       setPhotos((prev) => [fullPhoto, ...prev.filter((p) => p.id !== fullPhoto.id)]);
-      showToast('บันทึกภาพถ่ายลงแกลเลอรีเรียบร้อยแล้ว (+50 XP)');
+      showToast('ส่งผลงานภารกิจเรียบร้อยแล้ว! รออาจารย์ตรวจเพื่อรับ XP');
     }
 
     // Update challenges state if applicable
     setChallenges((prev) =>
       prev.map((c) => {
-        if (c.title === shutterChallengeTitle) {
+        if (c.title === shutterChallengeTitle || c.id === shutterChallengeId) {
           return {
             ...c,
             isInProgress: false,
-            isCompleted: true,
-            progressText: '2 / 2 Photos Submitted',
-            mentorFeedback: 'Outstanding balance and chromatic clarity!',
+            progressText: 'ส่งผลงานแล้ว (รอตรวจ)',
+            progressFraction: 0.75,
           };
         }
         return c;
@@ -325,6 +599,27 @@ export default function App() {
   const handleMarkAllNotificationsAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, isUnread: false })));
     showToast('ทำเครื่องหมายอ่านทั้งหมดแล้ว');
+  };
+
+  const handleUpdateUser = async (updated: Partial<UserProfile>) => {
+    setUser((prev) => ({ ...prev, ...updated }));
+    if (user.uid && user.isLoggedIn) {
+      try {
+        await updateUserProfile(user.uid, {
+          displayName: updated.name,
+          thaiName: updated.thaiName,
+          grade: updated.grade,
+          room: updated.room,
+          studentId: updated.studentId,
+          cameraGear: updated.cameraGear,
+          bio: updated.bio,
+          photoURL: updated.avatarUrl || null,
+        });
+        showToast('บันทึกข้อมูลโปรไฟล์เรียบร้อยแล้ว');
+      } catch (err) {
+        console.error('Failed to update user profile in Firestore:', err);
+      }
+    }
   };
 
   return (
@@ -356,6 +651,9 @@ export default function App() {
                 setSelectedDetailPhoto(found);
               }}
               onShowToast={showToast}
+              onSelectChallengeDetail={handleSelectChallengeDetail}
+              onOpenReviewModal={() => setIsReviewModalOpen(true)}
+              pendingReviewsCount={pendingReviewsCount}
             />
           )}
 
@@ -374,6 +672,7 @@ export default function App() {
           {currentTab === 'leaderboard' && (
             <LeaderboardView
               user={user}
+              members={leaderboardMembers}
               onGoToChallenges={() => setCurrentTab('challenges')}
               onShowToast={showToast}
             />
@@ -414,7 +713,7 @@ export default function App() {
               photos={photos}
               onSelectPhoto={(photo) => setSelectedDetailPhoto(photo)}
               onNavigate={setCurrentTab}
-              onUpdateUser={(updated) => setUser((prev) => ({ ...prev, ...updated }))}
+              onUpdateUser={handleUpdateUser}
               onShowToast={showToast}
               onOpenLogin={() => setIsLoginModalOpen(true)}
               onLogout={handleLogout}
@@ -447,8 +746,32 @@ export default function App() {
           isOpen={isShutterOpen}
           onClose={() => setIsShutterOpen(false)}
           selectedChallengeTitle={shutterChallengeTitle}
+          selectedChallengeId={shutterChallengeId}
           user={user}
           onSubmitSuccess={handleSubmitSuccess}
+          onShowToast={showToast}
+        />
+
+        <ChallengeDetailModal
+          isOpen={!!selectedChallengeForDetail}
+          onClose={() => setSelectedChallengeForDetail(null)}
+          challenge={selectedChallengeForDetail}
+          participant={
+            selectedChallengeForDetail
+              ? userParticipants[selectedChallengeForDetail.id]
+              : undefined
+          }
+          onStartMission={(ch) => {
+            handleOpenShutterForChallenge(ch.title, ch.id);
+            setSelectedChallengeForDetail(null);
+          }}
+        />
+
+        <ReviewSubmissionsModal
+          isOpen={isReviewModalOpen}
+          onClose={() => setIsReviewModalOpen(false)}
+          currentUserId={user.uid}
+          onShowToast={showToast}
         />
 
         <MissionCompleteModal

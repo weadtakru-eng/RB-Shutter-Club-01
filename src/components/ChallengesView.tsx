@@ -4,9 +4,12 @@ import { ChallengeItem, UserProfile } from '../types';
 interface ChallengesViewProps {
   challenges: ChallengeItem[];
   user: UserProfile;
-  onOpenShutterForChallenge: (challengeTitle: string) => void;
+  onOpenShutterForChallenge: (challengeTitle: string, challengeId?: string) => void;
   onViewSubmission: (challengeTitle: string) => void;
   onShowToast: (message: string) => void;
+  onSelectChallengeDetail?: (challenge: ChallengeItem) => void;
+  onOpenReviewModal?: () => void;
+  pendingReviewsCount?: number;
 }
 
 export const ChallengesView: React.FC<ChallengesViewProps> = ({
@@ -15,6 +18,9 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({
   onOpenShutterForChallenge,
   onViewSubmission,
   onShowToast,
+  onSelectChallengeDetail,
+  onOpenReviewModal,
+  pendingReviewsCount = 0,
 }) => {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -97,6 +103,40 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Teacher/Admin Review Banner */}
+      {(user.role === 'อาจารย์ที่ปรึกษา' ||
+        user.role === 'ผู้ดูแลระบบ' ||
+        user.email === 'edtech@rajinibon.ac.th') && (
+        <div className="w-full bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-800 text-white rounded-2xl p-3.5 shadow-md flex items-center justify-between border border-purple-700/50">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
+              <span className="material-symbols-outlined text-[20px] text-amber-300">fact_check</span>
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold">ระบบตรวจผลงานภาพถ่าย</span>
+                {pendingReviewsCount > 0 ? (
+                  <span className="text-[10px] bg-amber-400 text-gray-900 font-extrabold px-1.5 py-0.2 rounded-full animate-pulse">
+                    {pendingReviewsCount} รอตรวจ
+                  </span>
+                ) : (
+                  <span className="text-[10px] bg-emerald-500/30 text-emerald-300 px-1.5 py-0.2 rounded-full">
+                    ตรวจครบแล้ว
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-purple-200">ตรวจสอบความถูกต้องและอนุมัติ XP ให้นักเรียน</p>
+            </div>
+          </div>
+          <button
+            onClick={onOpenReviewModal}
+            className="py-1.5 px-3.5 rounded-full bg-white text-purple-900 hover:bg-purple-50 text-xs font-extrabold shadow-sm active:scale-95 transition-all shrink-0"
+          >
+            ตรวจผลงาน
+          </button>
+        </div>
+      )}
 
       {/* Content Header Block */}
       <div className="flex flex-col">
@@ -205,13 +245,23 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({
                 </span>
                 <span className="text-xs text-amber-900 font-extrabold">+{featured.xpReward} XP เควมารานี้</span>
               </div>
-              <button
-                onClick={() => onOpenShutterForChallenge(featured.title)}
-                className="bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold px-4 py-2.5 rounded-full transition-all active:scale-95 shadow-[0_4px_14px_rgba(107,56,212,0.3)] flex items-center gap-1.5"
-              >
-                <span>เริ่มภารกิจ</span>
-                <span className="material-symbols-outlined text-[17px]">arrow_forward</span>
-              </button>
+              <div className="flex items-center gap-2">
+                {onSelectChallengeDetail && (
+                  <button
+                    onClick={() => onSelectChallengeDetail(featured)}
+                    className="bg-purple-100 hover:bg-purple-200 text-purple-900 text-xs font-bold px-3 py-2.5 rounded-full transition-all active:scale-95"
+                  >
+                    ดูกติกา
+                  </button>
+                )}
+                <button
+                  onClick={() => onOpenShutterForChallenge(featured.title, featured.id)}
+                  className="bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold px-4 py-2.5 rounded-full transition-all active:scale-95 shadow-[0_4px_14px_rgba(107,56,212,0.3)] flex items-center gap-1.5"
+                >
+                  <span>เริ่มภารกิจ</span>
+                  <span className="material-symbols-outlined text-[17px]">arrow_forward</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -381,36 +431,49 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({
                     {mission.categoryLabel}
                   </span>
 
-                  {mission.isCompleted ? (
-                    <button
-                      onClick={() => onViewSubmission(mission.title)}
-                      className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3.5 py-1.5 rounded-full transition-all"
-                    >
-                      ดูผลงานที่ส่งแล้ว
-                    </button>
-                  ) : mission.isInProgress ? (
-                    <button
-                      onClick={() => onOpenShutterForChallenge(mission.title)}
-                      className="bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold px-3.5 py-2 rounded-full shadow-xs active:scale-95 transition-all flex items-center gap-1"
-                    >
-                      <span className="material-symbols-outlined text-[15px]">add_a_photo</span>
-                      <span>ส่งภาพที่ 2</span>
-                    </button>
-                  ) : mission.isLocked ? (
-                    <button
-                      disabled
-                      className="bg-gray-100 text-gray-400 text-xs font-semibold px-3 py-1.5 rounded-full cursor-not-allowed"
-                    >
-                      ล็อกอยู่ (เลเวล {mission.unlockLevel})
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => onOpenShutterForChallenge(mission.title)}
-                      className="bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-xs active:scale-95 transition-all"
-                    >
-                      เริ่มภารกิจ
-                    </button>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {onSelectChallengeDetail && (
+                      <button
+                        onClick={() => onSelectChallengeDetail(mission)}
+                        className="text-gray-500 hover:text-purple-700 text-xs font-semibold px-2.5 py-1.5 rounded-full hover:bg-purple-50 transition-colors"
+                        title="ดูกติกาและคำแนะนำ"
+                      >
+                        กติกา
+                      </button>
+                    )}
+
+                    {mission.isCompleted ? (
+                      <button
+                        onClick={() => onViewSubmission(mission.title)}
+                        className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1.5 rounded-full transition-all flex items-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                        <span>สำเร็จแล้ว</span>
+                      </button>
+                    ) : mission.isInProgress ? (
+                      <button
+                        onClick={() => onOpenShutterForChallenge(mission.title, mission.id)}
+                        className="bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-xs active:scale-95 transition-all flex items-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">add_a_photo</span>
+                        <span>ส่งผลงาน</span>
+                      </button>
+                    ) : mission.isLocked ? (
+                      <button
+                        disabled
+                        className="bg-gray-100 text-gray-400 text-xs font-semibold px-3 py-1.5 rounded-full cursor-not-allowed"
+                      >
+                        ล็อกอยู่ (เลเวล {mission.unlockLevel})
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onOpenShutterForChallenge(mission.title, mission.id)}
+                        className="bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-xs active:scale-95 transition-all"
+                      >
+                        เริ่มภารกิจ
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

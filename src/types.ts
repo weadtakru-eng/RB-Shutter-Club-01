@@ -142,4 +142,5 @@ export interface UserProfile {
   questsCompleted: number;
   questsTotal: number;
   badgesCount: number;
+  currentStreak?: number;
 }

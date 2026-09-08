@@ -1,0 +1,25 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Member submissions path: submissions/{userId}/{challengeId}/{submissionId}
+    match /submissions/{userId}/{challengeId}/{fileName} {
+      // Allow reading submitted photos
+      allow read: if true;
+
+      // Allow member to upload photos only to their own folder path
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+
+      // Only the author or teacher/admin can delete
+      allow delete: if request.auth != null && (
+        request.auth.uid == userId ||
+        request.auth.token.email in ['edtech@rajinibon.ac.th']
+      );
+    }
+
+    // Default fallback: allow read for public club photos, allow write for authenticated club members
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}

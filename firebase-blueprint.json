@@ -2,48 +2,93 @@
   "entities": {
     "User": {
       "title": "User",
-      "description": "Student photographer profile in RB Shutter Club",
+      "description": "Student photographer member profile in RB Shutter Club",
       "type": "object",
       "properties": {
         "uid": {
           "type": "string",
-          "description": "Firebase Auth User ID"
+          "description": "Firebase Auth UID"
         },
         "email": {
           "type": "string",
           "format": "email",
           "description": "Student email address"
         },
-        "name": {
+        "displayName": {
           "type": "string",
-          "description": "Full name"
+          "description": "Display name"
         },
-        "thaiName": {
+        "photoURL": {
           "type": "string",
-          "description": "Thai name"
-        },
-        "grade": {
-          "type": "string",
-          "description": "High school grade/class"
+          "description": "Profile picture URL"
         },
         "role": {
           "type": "string",
-          "description": "Club role"
+          "enum": ["member", "teacher", "admin"],
+          "description": "User permission role"
         },
-        "avatarUrl": {
-          "type": "string",
-          "description": "Avatar photo URL"
+        "xp": {
+          "type": "number",
+          "description": "Total accumulated Experience Points"
         },
         "level": {
           "type": "number",
-          "description": "Club level"
+          "description": "Club rank level from 1 to 10"
         },
-        "currentXP": {
+        "completedChallenges": {
           "type": "number",
-          "description": "Experience points"
+          "description": "Number of completed photo challenges"
+        },
+        "photoCount": {
+          "type": "number",
+          "description": "Total uploaded photos count"
+        },
+        "badgeCount": {
+          "type": "number",
+          "description": "Total badges unlocked count"
+        },
+        "currentStreak": {
+          "type": "number",
+          "description": "Current consecutive daily shooting streak"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update timestamp"
         }
       },
-      "required": ["uid", "email"]
+      "required": ["uid", "email", "role", "xp", "level"]
+    },
+    "XpTransaction": {
+      "title": "XpTransaction",
+      "description": "Audit record of XP point awards",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Target user ID who earned XP"
+        },
+        "amount": {
+          "type": "number",
+          "description": "XP amount granted (e.g. 20, 30, 50, 100)"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Description of the activity or challenge"
+        },
+        "source": {
+          "type": "string",
+          "description": "Source module (e.g. challenge_submission, workshop, photo_walk)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Transaction timestamp"
+        }
+      },
+      "required": ["userId", "amount", "reason"]
     },
     "Photo": {
       "title": "Photo",
@@ -57,6 +102,10 @@
         "authorId": {
           "type": "string",
           "description": "UID of the author student"
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Name of the author"
         },
         "title": {
           "type": "string",
@@ -80,6 +129,53 @@
         }
       },
       "required": ["authorId", "title", "imageUrl"]
+    },
+    "Challenge": {
+      "title": "Challenge",
+      "description": "Photo challenge mission",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "difficulty": { "type": "string", "enum": ["Easy", "Medium", "Hard"] },
+        "points": { "type": "number" },
+        "coverImage": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "active", "completed", "expired"] },
+        "deadline": { "type": "string" },
+        "participantsCount": { "type": "number" }
+      },
+      "required": ["id", "title", "points", "status"]
+    },
+    "ChallengeParticipant": {
+      "title": "ChallengeParticipant",
+      "description": "Tracks student engagement in challenges",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "challengeId": { "type": "string" },
+        "status": { "type": "string", "enum": ["started", "submitted", "approved", "rejected"] }
+      },
+      "required": ["userId", "challengeId", "status"]
+    },
+    "Submission": {
+      "title": "Submission",
+      "description": "Photo submission under review",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "challengeId": { "type": "string" },
+        "imageURL": { "type": "string" },
+        "storagePath": { "type": "string" },
+        "caption": { "type": "string" },
+        "visibility": { "type": "string", "enum": ["club", "private"] },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "rewarded": { "type": "boolean" },
+        "points": { "type": "number" }
+      },
+      "required": ["id", "userId", "challengeId", "imageURL", "status"]
     }
   },
   "firestore": {
@@ -88,6 +184,30 @@
         "$ref": "#/entities/User"
       },
       "description": "Student user profile documents"
+    },
+    "/xpTransactions/{transactionId}": {
+      "schema": {
+        "$ref": "#/entities/XpTransaction"
+      },
+      "description": "Immutable XP transaction history audit log"
+    },
+    "/challenges/{challengeId}": {
+      "schema": {
+        "$ref": "#/entities/Challenge"
+      },
+      "description": "Photo challenges collection"
+    },
+    "/challengeParticipants/{participantId}": {
+      "schema": {
+        "$ref": "#/entities/ChallengeParticipant"
+      },
+      "description": "User challenge participation status"
+    },
+    "/submissions/{submissionId}": {
+      "schema": {
+        "$ref": "#/entities/Submission"
+      },
+      "description": "Photo submissions for review"
     },
     "/photos/{photoId}": {
       "schema": {

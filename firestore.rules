@@ -1,24 +1,128 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isTeacherOrAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email in ['edtech@rajinibon.ac.th'] ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['teacher', 'admin'])
+      );
+    }
+
     // Users collection
     match /users/{userId} {
+      // Allow read for leaderboard and public profile views
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+
+      // When first creating user profile: must have role 'member', xp 0, level 1
+      allow create: if isOwner(userId) &&
+        request.resource.data.role == 'member' &&
+        request.resource.data.xp == 0 &&
+        request.resource.data.level == 1;
+
+      // Update rules:
+      // 1. Teacher/Admin can edit any fields
+      // 2. Member can edit their profile (bio, cameraGear, etc.) but NEVER role, xp, or level
+      // 3. Member can execute verified XP increment transactions
+      allow update: if isTeacherOrAdmin() || (
+        isOwner(userId) && (
+          // Case A: Profile info update (no role, xp, or level changes)
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'xp', 'level']) ||
+          // Case B: Verified Atomic XP transaction (xp only increases, role remains unchanged)
+          (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['xp', 'level', 'updatedAt', 'completedChallenges', 'photoCount', 'badgeCount', 'currentStreak']) &&
+            request.resource.data.xp >= resource.data.xp &&
+            request.resource.data.role == resource.data.role
+          )
+        )
+      );
+
+      // Only teacher/admin can delete user documents
+      allow delete: if isTeacherOrAdmin();
+    }
+
+    // XP History & Audit Transactions (Immutable)
+    match /xpTransactions/{transactionId} {
+      // Member can read their own XP history, teacher/admin can read all
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isTeacherOrAdmin()
+      );
+
+      // Only allow creating transactions for authenticated user with valid XP amounts
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.amount in [20, 30, 50, 100];
+
+      // XP transactions are strictly immutable once written
+      allow update, delete: if false;
     }
 
     // Photos submitted by members
     match /photos/{photoId} {
       allow read: if true;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null;
-      allow delete: if request.auth != null && resource.data.authorId == request.auth.uid;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isTeacherOrAdmin());
     }
 
-    // Default catch-all
+    // Challenges collection
+    match /challenges/{challengeId} {
+      // Anyone can read challenges
+      allow read: if true;
+      // Only teacher/admin can create, update, or delete challenges
+      allow write: if isTeacherOrAdmin();
+    }
+
+    // Challenge participants collection (document ID: userId_challengeId)
+    match /challengeParticipants/{participantId} {
+      // Allow read for owner or teacher/admin
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isTeacherOrAdmin()
+      );
+      // Member can start their own challenge participation
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      // Member can update their own status to submitted; Teacher/Admin can review
+      allow update: if isTeacherOrAdmin() || (
+        isSignedIn() &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == request.auth.uid
+      );
+      allow delete: if isTeacherOrAdmin();
+    }
+
+    // Submissions collection
+    match /submissions/{submissionId} {
+      // Public or club visibility read, own submission read, or teacher/admin read
+      allow read: if true;
+
+      // Member can submit photo for a challenge with status 'pending' and rewarded == false
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.rewarded == false;
+
+      // Only teacher/admin can approve, reject, or edit submissions
+      allow update: if isTeacherOrAdmin();
+      allow delete: if isTeacherOrAdmin();
+    }
+
+    // Fallback catch-all
     match /{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isTeacherOrAdmin();
     }
   }
 }
+

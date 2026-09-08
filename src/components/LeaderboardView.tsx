@@ -1,24 +1,59 @@
 import React, { useState } from 'react';
 import { UserProfile } from '../types';
 import { LEADERBOARD_MEMBERS } from '../data/mockData';
+import { LeaderboardEntry } from '../lib/userService';
 
 interface LeaderboardViewProps {
   user: UserProfile;
   onGoToChallenges: () => void;
   onShowToast: (msg: string) => void;
+  members?: LeaderboardEntry[];
 }
 
 export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
   user,
   onGoToChallenges,
   onShowToast,
+  members,
 }) => {
   const [timeFilter, setTimeFilter] = useState<'weekly' | 'monthly' | 'all'>('weekly');
 
-  const top1 = LEADERBOARD_MEMBERS[0];
-  const top2 = LEADERBOARD_MEMBERS[1];
-  const top3 = LEADERBOARD_MEMBERS[2];
-  const restMembers = LEADERBOARD_MEMBERS.slice(3);
+  // Merge Firestore members with mock data if less than 3 exist so podium is always rendered nicely
+  const activeMembers: LeaderboardEntry[] = React.useMemo(() => {
+    if (!members || members.length === 0) {
+      return LEADERBOARD_MEMBERS.map((m) => ({
+        ...m,
+        uid: `mock-${m.rank}`,
+        level: Math.max(1, Math.min(10, Math.floor(m.xp / 400) + 1)),
+        isYou: Boolean(m.isYou),
+      }));
+    }
+
+    if (members.length >= 3) {
+      return members;
+    }
+
+    // If 1 or 2 real users exist, append mock members to fill the podium
+    const userNames = new Set(members.map((m) => m.name));
+    const filler: LeaderboardEntry[] = LEADERBOARD_MEMBERS.filter((m) => !userNames.has(m.name)).map((m) => ({
+      ...m,
+      uid: `mock-${m.rank}`,
+      level: Math.max(1, Math.min(10, Math.floor(m.xp / 400) + 1)),
+      isYou: false,
+    }));
+
+    const combined = [...members, ...filler];
+    return combined.map((m, idx) => ({
+      ...m,
+      rank: idx + 1,
+      isYou: m.isYou || (user.uid ? m.uid === user.uid : false),
+    }));
+  }, [members, user.uid]);
+
+  const top1 = activeMembers[0] || LEADERBOARD_MEMBERS[0];
+  const top2 = activeMembers[1] || LEADERBOARD_MEMBERS[1];
+  const top3 = activeMembers[2] || LEADERBOARD_MEMBERS[2];
+  const restMembers = activeMembers.slice(3);
 
   return (
     <div className="flex flex-col w-full pb-24 px-4 space-y-4 pt-3">

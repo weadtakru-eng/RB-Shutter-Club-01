@@ -9,7 +9,14 @@ import {
   onAuthStateChanged,
   User as FirebaseUser,
 } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import {
+  initializeFirestore,
+  getFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  Firestore,
+} from 'firebase/firestore';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
 import firebaseConfigData from '../../firebase-applet-config.json';
 
 // Environment variables with fallback
@@ -63,7 +70,26 @@ export const firebaseConfig = {
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+let firestoreInstance: Firestore;
+try {
+  firestoreInstance = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager(),
+    }),
+  });
+} catch {
+  firestoreInstance = getFirestore(app);
+}
+export const db = firestoreInstance;
+
+let storageInstance: FirebaseStorage;
+try {
+  storageInstance = getStorage(app);
+} catch {
+  storageInstance = getStorage();
+}
+export const storage = storageInstance;
 
 // Initialize Google OAuth Provider with explicit scopes
 export const googleProvider = new GoogleAuthProvider();
