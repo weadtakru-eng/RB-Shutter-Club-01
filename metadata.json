@@ -1,0 +1,6 @@
+{
+  "name": "RB Shutter Club - PIXEL QUEST",
+  "description": "High school photography club creative community app with photo quests, student gallery, achievements, peer critiques, and club activities.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

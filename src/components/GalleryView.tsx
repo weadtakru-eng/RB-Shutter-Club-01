@@ -1,0 +1,355 @@
+import React, { useState } from 'react';
+import { PhotoItem } from '../types';
+
+interface GalleryViewProps {
+  photos: PhotoItem[];
+  onSelectPhoto: (photo: PhotoItem) => void;
+  onToggleLike: (photoId: string) => void;
+  onToggleBookmark: (photoId: string) => void;
+  onOpenShutter: () => void;
+  onShowToast: (msg: string) => void;
+}
+
+export const GalleryView: React.FC<GalleryViewProps> = ({
+  photos,
+  onSelectPhoto,
+  onToggleLike,
+  onToggleBookmark,
+  onOpenShutter,
+  onShowToast,
+}) => {
+  const [layoutMode, setLayoutMode] = useState<'grid' | 'feed'>('grid');
+  const [activeFilter, setActiveFilter] = useState<string>('latest');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const filterChips = [
+    { id: 'latest', label: 'Latest' },
+    { id: 'popular', label: 'Popular 🔥' },
+    { id: 'quests', label: 'Quests' },
+    { id: 'nature', label: 'Nature' },
+    { id: 'portrait', label: 'Portrait' },
+    { id: 'creative', label: 'Creative' },
+    { id: 'bw', label: 'B&W' },
+  ];
+
+  const filteredPhotos = photos.filter((p) => {
+    const matchesSearch =
+      !searchQuery.trim() ||
+      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.authorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.questTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    if (!matchesSearch) return false;
+
+    if (activeFilter === 'popular') return p.likes > 30;
+    if (activeFilter === 'nature') return p.questCategory === 'nature';
+    if (activeFilter === 'portrait') return p.questCategory === 'portrait';
+    if (activeFilter === 'quests') return Boolean(p.questTitle);
+    return true;
+  });
+
+  return (
+    <div className="flex flex-col w-full pb-28 px-4 space-y-4 pt-3">
+      {/* Top Header info & view toggle */}
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight">Gallery</h1>
+            <span className="text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+              <span className="material-symbols-outlined text-[12px]">verified_user</span>
+              Safe Space
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Student captures, peer critiques & mentor highlights
+          </p>
+        </div>
+
+        {/* Grid vs Feed toggle */}
+        <div className="flex items-center bg-gray-100 p-1 rounded-full shrink-0">
+          <button
+            onClick={() => setLayoutMode('grid')}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+              layoutMode === 'grid'
+                ? 'bg-white text-purple-700 shadow-xs'
+                : 'text-gray-500 hover:text-gray-900'
+            }`}
+            title="Grid View"
+          >
+            <span className="material-symbols-outlined text-[18px]">grid_view</span>
+          </button>
+          <button
+            onClick={() => setLayoutMode('feed')}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+              layoutMode === 'feed'
+                ? 'bg-white text-purple-700 shadow-xs'
+                : 'text-gray-500 hover:text-gray-900'
+            }`}
+            title="Feed View"
+          >
+            <span className="material-symbols-outlined text-[18px]">view_agenda</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Search Input */}
+      <div className="flex items-center gap-2 w-full">
+        <div className="flex-1 bg-white rounded-full px-3.5 py-2.5 flex items-center gap-2 shadow-xs border border-gray-100 focus-within:ring-2 focus-within:ring-purple-200 transition-all">
+          <span className="material-symbols-outlined text-gray-400 text-[20px]">
+            search
+          </span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search student photos, quests, cameras..."
+            className="bg-transparent border-none outline-none text-xs text-gray-900 placeholder:text-gray-400 w-full"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="text-gray-400">
+              <span className="material-symbols-outlined text-[16px]">close</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Filter Chips Bar */}
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-4 px-4">
+        {filterChips.map((chip) => (
+          <button
+            key={chip.id}
+            onClick={() => setActiveFilter(chip.id)}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all active:scale-95 ${
+              activeFilter === chip.id
+                ? 'bg-purple-700 text-white shadow-xs'
+                : 'bg-white text-gray-600 hover:text-gray-900 border border-gray-100'
+            }`}
+          >
+            {chip.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Gallery Items Display */}
+      {layoutMode === 'grid' ? (
+        /* 2-Column Responsive Masonry Grid */
+        <div className="grid grid-cols-2 gap-3">
+          {filteredPhotos.map((photo) => {
+            return (
+              <div
+                key={photo.id}
+                className="group flex flex-col bg-white rounded-2xl overflow-hidden shadow-xs border border-gray-100 hover:shadow-md transition-all cursor-pointer"
+                onClick={() => onSelectPhoto(photo)}
+              >
+                {/* Photo Image Container */}
+                <div className={`relative w-full ${photo.aspectRatio} overflow-hidden bg-gray-100`}>
+                  <img
+                    src={photo.imageUrl}
+                    alt={photo.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+                  {/* Mentor Pick Ribbon */}
+                  {photo.isMentorPick && (
+                    <div className="absolute top-2 left-2 bg-purple-700/90 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                      <span className="material-symbols-outlined text-[11px]">star</span>
+                      <span>Mentor Pick</span>
+                    </div>
+                  )}
+
+                  {/* Club Life Tag */}
+                  {photo.isClubLife && (
+                    <div className="absolute top-2 left-2 bg-pink-600/90 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                      <span className="material-symbols-outlined text-[11px]">groups</span>
+                      <span>Club Life</span>
+                    </div>
+                  )}
+
+                  {/* Bottom Image Stamp */}
+                  <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-white text-[10px] drop-shadow">
+                    <span className="font-mono bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded text-[9px]">
+                      {photo.exif.aperture} • {photo.exif.shutterSpeed}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Card Meta & Interactions */}
+                <div className="p-2.5 flex flex-col gap-1.5">
+                  <h3 className="text-xs font-bold text-gray-900 truncate leading-snug">
+                    {photo.title}
+                  </h3>
+                  <div className="flex items-center justify-between text-[10px] text-gray-500">
+                    <span className="truncate max-w-[90px] font-medium">
+                      {photo.authorName} ({photo.authorGrade})
+                    </span>
+                    <span className="text-purple-600 font-bold truncate max-w-[70px]">
+                      {photo.questTitle}
+                    </span>
+                  </div>
+
+                  {/* Interaction Buttons Bar */}
+                  <div className="flex items-center justify-between pt-1 border-t border-gray-50 text-[11px]">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleLike(photo.id);
+                      }}
+                      className={`flex items-center gap-1 transition-colors ${
+                        photo.isLiked ? 'text-rose-600 font-bold' : 'text-gray-500 hover:text-rose-600'
+                      }`}
+                    >
+                      <span
+                        className="material-symbols-outlined text-[15px]"
+                        style={{ fontVariationSettings: photo.isLiked ? "'FILL' 1" : "'FILL' 0" }}
+                      >
+                        favorite
+                      </span>
+                      <span>{photo.likes}</span>
+                    </button>
+
+                    <div className="flex items-center gap-1 text-gray-500">
+                      <span className="material-symbols-outlined text-[15px]">chat_bubble</span>
+                      <span>{photo.commentsCount}</span>
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleBookmark(photo.id);
+                      }}
+                      className={`transition-colors ${
+                        photo.isBookmarked ? 'text-purple-700' : 'text-gray-400 hover:text-purple-700'
+                      }`}
+                    >
+                      <span
+                        className="material-symbols-outlined text-[15px]"
+                        style={{ fontVariationSettings: photo.isBookmarked ? "'FILL' 1" : "'FILL' 0" }}
+                      >
+                        bookmark
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* Full-Width Feed Layout */
+        <div className="flex flex-col gap-4">
+          {filteredPhotos.map((photo) => (
+            <div
+              key={photo.id}
+              className="flex flex-col bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer"
+              onClick={() => onSelectPhoto(photo)}
+            >
+              {/* Feed Card Author Header */}
+              <div className="p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs">
+                    {photo.authorInitial}
+                  </div>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1">
+                      <span className="font-bold text-xs text-gray-900">{photo.authorName}</span>
+                      <span className="text-[10px] text-gray-500">• {photo.authorGrade}</span>
+                    </div>
+                    <span className="text-[10px] text-purple-700 font-semibold">{photo.questTitle}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  {photo.isMentorPick && (
+                    <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[12px]">star</span>
+                      Mentor Pick
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Photo Image */}
+              <div className="relative w-full aspect-[4/5] bg-black">
+                <img
+                  src={photo.imageUrl}
+                  alt={photo.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-white text-[10px] font-mono">
+                  {photo.exif.camera} • {photo.exif.aperture} • {photo.exif.shutterSpeed}
+                </div>
+              </div>
+
+              {/* Action Bar & Caption */}
+              <div className="p-4 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 text-xs font-semibold">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleLike(photo.id);
+                      }}
+                      className={`flex items-center gap-1.5 ${
+                        photo.isLiked ? 'text-rose-600 font-bold' : 'text-gray-600 hover:text-rose-600'
+                      }`}
+                    >
+                      <span
+                        className="material-symbols-outlined text-[20px]"
+                        style={{ fontVariationSettings: photo.isLiked ? "'FILL' 1" : "'FILL' 0" }}
+                      >
+                        favorite
+                      </span>
+                      <span>{photo.likes} Likes</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectPhoto(photo);
+                      }}
+                      className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">chat_bubble</span>
+                      <span>{photo.commentsCount} Critiques</span>
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleBookmark(photo.id);
+                    }}
+                    className={photo.isBookmarked ? 'text-purple-700' : 'text-gray-400 hover:text-gray-700'}
+                  >
+                    <span
+                      className="material-symbols-outlined text-[22px]"
+                      style={{ fontVariationSettings: photo.isBookmarked ? "'FILL' 1" : "'FILL' 0" }}
+                    >
+                      bookmark
+                    </span>
+                  </button>
+                </div>
+
+                <h4 className="font-extrabold text-sm text-gray-900 mt-1">{photo.title}</h4>
+                {photo.visualStory && (
+                  <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
+                    {photo.visualStory}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Floating Action Button: Submit Shot */}
+      <button
+        onClick={onOpenShutter}
+        className="fixed bottom-20 right-4 z-30 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs px-4 py-3 rounded-full shadow-[0_6px_20px_rgba(107,56,212,0.4)] active:scale-95 transition-all flex items-center gap-2"
+      >
+        <span className="material-symbols-outlined text-[18px]">add_a_photo</span>
+        <span>Submit Shot</span>
+      </button>
+    </div>
+  );
+};
