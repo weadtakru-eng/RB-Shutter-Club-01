@@ -45,20 +45,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
 
-  const handleGoogleSignIn = async (forceTry = false) => {
+  const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setErrorMessage(null);
     setErrorCode(null);
-
-    // If currently on an unauthorized preview domain (like *.run.app) and not forced
-    if (!forceTry && !isAuthorizedDomain()) {
-      setIsLoading(false);
-      setErrorCode('auth/unauthorized-domain');
-      setErrorMessage(
-        `โดเมนพรีวิว (${currentHost}) ยังไม่ได้รับอนุญาตใน Firebase Console ของ rb-shutter-club-01`
-      );
-      return;
-    }
 
     try {
       const user = await signInWithGoogle();
@@ -76,11 +66,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
       if (code === 'auth/unauthorized-domain' || code === 'auth/invalid-continue-uri') {
         setErrorMessage(
-          `โดเมนปัจจุบัน (${currentHost}) ยังไม่ได้รับอนุญาตใน Firebase Authentication (Authorized Domains)`
+          `โดเมนปัจจุบัน (${currentHost}) ยังไม่ได้เพิ่มใน Firebase Authentication Authorized Domains ของโปรเจกต์ rb-shutter-club-01`
         );
       } else if (code === 'auth/popup-blocked') {
         setErrorMessage(
-          'เบราว์เซอร์บล็อกหน้าต่างป๊อปอัป กรุณาอนุญาตป๊อปอัป หรือเลือกเข้าสู่ระบบด้วยวิธีเปลี่ยนหน้า (Redirect)'
+          'เบราว์เซอร์หรือ iFrame บล็อกหน้าต่างป๊อปอัป กรุณาเลือก "เปิดในหน้าต่างหลัก" เพื่อเข้าสู่ระบบ'
         );
       } else if (code === 'auth/popup-closed-by-user') {
         setErrorMessage('คุณได้ปิดหน้าต่างเข้าสู่ระบบก่อนดำเนินการเสร็จสิ้น');
@@ -92,6 +82,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleOpenInMainWindow = () => {
+    const targetUrl = window.location.origin + window.location.pathname + '?login=true';
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleGoogleRedirect = async () => {
@@ -166,11 +161,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
         {/* In-Iframe Advisory Banner */}
         {inIframe && (
-          <div className="bg-purple-50/70 border border-purple-100 rounded-2xl p-2.5 flex items-center gap-2 text-[11px] text-purple-800">
-            <span className="material-symbols-outlined text-[16px] text-purple-600 shrink-0">info</span>
-            <span className="flex-1">
-              กำลังรันใน iFrame Preview หากพบบล็อกป๊อปอัป สามารถเปิดในแท็บใหม่เพื่อล็อกอินได้
-            </span>
+          <div className="bg-purple-50/70 border border-purple-100 rounded-2xl p-2.5 flex flex-col gap-1.5 text-[11px] text-purple-800">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[16px] text-purple-600 shrink-0">info</span>
+              <span className="flex-1">
+                กำลังรันใน iFrame Preview หากพบปัญหาป๊อปอัป สามารถเปิดในหน้าต่างหลักเพื่อล็อกอินได้อย่างปลอดภัย
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleOpenInMainWindow}
+              className="self-start text-[11px] font-bold text-purple-700 hover:text-purple-900 underline flex items-center gap-1 pl-6"
+            >
+              <span className="material-symbols-outlined text-[13px]">open_in_new</span>
+              <span>เปิดแอปในหน้าต่างหลัก (แท็บใหม่)</span>
+            </button>
           </div>
         )}
 
@@ -206,6 +211,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     </span>
                   </a>
 
+                  {inIframe && (
+                    <button
+                      onClick={handleOpenInMainWindow}
+                      type="button"
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 font-bold transition-colors text-[11px] border border-purple-200"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                      <span>เปิดในหน้าต่างหลักเพื่อล็อกอิน</span>
+                    </button>
+                  )}
+
                   <button
                     onClick={handleCopyCurrentDomain}
                     type="button"
@@ -231,7 +247,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   </button>
 
                   <button
-                    onClick={() => handleGoogleSignIn(true)}
+                    onClick={handleGoogleSignIn}
                     type="button"
                     className="w-full py-1 text-center text-[10px] text-gray-500 hover:text-purple-700 underline transition-colors"
                   >
@@ -242,12 +258,25 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             )}
 
             {errorCode === 'auth/popup-blocked' && (
-              <button
-                onClick={handleGoogleRedirect}
-                className="mt-1 text-[11px] font-bold text-rose-800 underline text-left hover:text-rose-950"
-              >
-                คลิกที่นี่เพื่อเข้าสู่ระบบด้วยวิธี Redirect แทน
-              </button>
+              <div className="mt-1 flex flex-col gap-1.5 text-[11px] text-rose-800">
+                <button
+                  type="button"
+                  onClick={handleOpenInMainWindow}
+                  className="font-bold underline text-left hover:text-rose-950 flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                  <span>เปิดแอปในหน้าต่างหลักเพื่อเข้าสู่ระบบ</span>
+                </button>
+                {!inIframe && (
+                  <button
+                    type="button"
+                    onClick={handleGoogleRedirect}
+                    className="font-bold underline text-left hover:text-rose-950"
+                  >
+                    คลิกที่นี่เพื่อเข้าสู่ระบบด้วยวิธี Redirect แทน
+                  </button>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -256,7 +285,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         <div className="space-y-2.5 pt-1">
           {/* Main Google Popup Button */}
           <button
-            onClick={() => handleGoogleSignIn(false)}
+            onClick={handleGoogleSignIn}
             disabled={isLoading}
             className="w-full py-3 px-4 rounded-2xl bg-white border-2 border-gray-200 hover:border-purple-600 hover:bg-purple-50/40 text-gray-800 font-bold text-xs flex items-center justify-center gap-3 transition-all shadow-xs active:scale-98 disabled:opacity-50"
           >

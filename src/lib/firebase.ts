@@ -14,23 +14,15 @@ import firebaseConfigData from '../../firebase-applet-config.json';
 
 // Ensure authDomain is strictly Firebase Authentication domain (rb-shutter-club-01.firebaseapp.com)
 // and NEVER set to a Vercel domain.
-let authDomain =
-  import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ||
-  firebaseConfigData.authDomain ||
-  'rb-shutter-club-01.firebaseapp.com';
-
-if (authDomain.includes('vercel.app')) {
-  console.warn('Warning: authDomain cannot be a Vercel domain. Automatically reverting to rb-shutter-club-01.firebaseapp.com');
-  authDomain = 'rb-shutter-club-01.firebaseapp.com';
-}
+const authDomain = 'rb-shutter-club-01.firebaseapp.com';
 
 export const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfigData.apiKey,
   authDomain: authDomain,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfigData.projectId || 'rb-shutter-club-01',
+  projectId: 'rb-shutter-club-01',
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfigData.storageBucket || 'rb-shutter-club-01.firebasestorage.app',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigData.messagingSenderId,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfigData.appId,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigData.messagingSenderId || '216138127351',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfigData.appId || '1:216138127351:web:b80983339b3c42351e00f2',
 };
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -71,7 +63,8 @@ export function isAuthorizedDomain(): boolean {
     host.endsWith('.firebaseapp.com') ||
     host.endsWith('.web.app') ||
     host.endsWith('.vercel.app') ||
-    host.includes('vercel.app')
+    host.includes('vercel.app') ||
+    host.includes('run.app')
   );
 }
 
@@ -103,6 +96,12 @@ export async function signInWithGoogle(): Promise<FirebaseUser> {
  * Sign in with Google using redirect (recommended for constrained environments)
  */
 export async function signInWithGoogleRedirect(): Promise<void> {
+  if (isInIframe()) {
+    // If inside an iframe, Google OAuth redirect will be blocked by X-Frame-Options: DENY.
+    // Safely open the app in a new top-level window so the user can authenticate cleanly.
+    window.open(window.location.origin + window.location.pathname + '?login=true', '_blank', 'noopener,noreferrer');
+    return;
+  }
   try {
     await signInWithRedirect(auth, provider);
   } catch (error: any) {

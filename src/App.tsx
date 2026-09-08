@@ -61,6 +61,14 @@ export default function App() {
 
   // Listen to Firebase Auth state & Handle Redirect result
   useEffect(() => {
+    // Open Login Modal automatically if launched with ?login=true or #login
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('login') === 'true' || window.location.hash === '#login') {
+        setIsLoginModalOpen(true);
+      }
+    }
+
     // Check if coming back from signInWithRedirect
     getRedirectResult(auth)
       .then((result) => {
