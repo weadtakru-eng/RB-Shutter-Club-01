@@ -6,7 +6,12 @@ import {
   INITIAL_CHALLENGES,
   INITIAL_NOTIFICATIONS,
 } from './data/mockData';
-import { auth, onAuthStateChanged, signOutUser } from './lib/firebase';
+import {
+  auth,
+  onAuthStateChanged,
+  signOutUser,
+  getRedirectResult,
+} from './lib/firebase';
 
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
@@ -50,8 +55,30 @@ export default function App() {
     }, 3000);
   };
 
-  // Listen to Firebase Auth state
+  // Listen to Firebase Auth state & Handle Redirect result
   useEffect(() => {
+    // Check if coming back from signInWithRedirect
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result && result.user) {
+          const u = result.user;
+          setUser((prev) => ({
+            ...prev,
+            uid: u.uid,
+            name: u.displayName || prev.name,
+            thaiName: u.displayName || prev.thaiName,
+            email: u.email || prev.email,
+            avatarUrl: u.photoURL || undefined,
+            isLoggedIn: true,
+          }));
+          setCurrentTab('challenges'); // นำผู้ใช้ไปหน้า Home (ภารกิจ)
+          showToast(`ยินดีต้อนรับ ${u.displayName || u.email || 'สมาชิกชมรม'}!`);
+        }
+      })
+      .catch((err: any) => {
+        console.error('Firebase Redirect Auth Error:', err);
+      });
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         setUser((prev) => ({
@@ -84,6 +111,8 @@ export default function App() {
       avatarUrl: googleUser.photoURL || undefined,
       isLoggedIn: true,
     }));
+    // Requirement 11: นำผู้ใช้ไปหน้า Home (Challenges) ทันทีหลังล็อกอินสำเร็จ
+    setCurrentTab('challenges');
   };
 
   const handleLogout = async () => {

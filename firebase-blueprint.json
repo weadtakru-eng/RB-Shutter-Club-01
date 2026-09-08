@@ -1,0 +1,99 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Student photographer profile in RB Shutter Club",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth User ID"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Student email address"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name"
+        },
+        "thaiName": {
+          "type": "string",
+          "description": "Thai name"
+        },
+        "grade": {
+          "type": "string",
+          "description": "High school grade/class"
+        },
+        "role": {
+          "type": "string",
+          "description": "Club role"
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "Avatar photo URL"
+        },
+        "level": {
+          "type": "number",
+          "description": "Club level"
+        },
+        "currentXP": {
+          "type": "number",
+          "description": "Experience points"
+        }
+      },
+      "required": ["uid", "email"]
+    },
+    "Photo": {
+      "title": "Photo",
+      "description": "Photo quest submission by a student",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Photo document ID"
+        },
+        "authorId": {
+          "type": "string",
+          "description": "UID of the author student"
+        },
+        "title": {
+          "type": "string",
+          "description": "Photo title"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Image download or host URL"
+        },
+        "questTitle": {
+          "type": "string",
+          "description": "Associated challenge or quest"
+        },
+        "likes": {
+          "type": "number",
+          "description": "Like count"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Submission ISO timestamp"
+        }
+      },
+      "required": ["authorId", "title", "imageUrl"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Student user profile documents"
+    },
+    "/photos/{photoId}": {
+      "schema": {
+        "$ref": "#/entities/Photo"
+      },
+      "description": "Submitted club photos"
+    }
+  }
+}

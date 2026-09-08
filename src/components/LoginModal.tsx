@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { signInWithGoogle } from '../lib/firebase';
-import { UserProfile } from '../types';
+import React, { useState, useEffect } from 'react';
+import {
+  signInWithGoogle,
+  signInWithGoogleRedirect,
+  isInIframe,
+} from '../lib/firebase';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -14,6 +17,9 @@ interface LoginModalProps {
   onShowToast: (msg: string) => void;
 }
 
+const VERCEL_PROD_URL =
+  'https://rb-shutter-club-01-58r0sx5pb-weadtakru-eng.vercel.app';
+
 export const LoginModal: React.FC<LoginModalProps> = ({
   isOpen,
   onClose,
@@ -22,12 +28,26 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [copiedDomain, setCopiedDomain] = useState(false);
+  const [inIframe, setInIframe] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setInIframe(isInIframe());
+      setErrorMessage(null);
+      setErrorCode(null);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setErrorMessage(null);
+    setErrorCode(null);
     try {
       const user = await signInWithGoogle();
       onLoginSuccess({
@@ -39,12 +59,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       onShowToast(`ยินดีต้อนรับ ${user.displayName || user.email || 'สมาชิกชมรม'}!`);
       onClose();
     } catch (err: any) {
-      console.error('Login error:', err);
-      if (err.code === 'auth/popup-blocked') {
-        setErrorMessage('เบราว์เซอร์บล็อกหน้าต่างป๊อปอัป กรุณาอนุญาตป๊อปอัปหรือเปิดแอปในแท็บใหม่');
-      } else if (err.code === 'auth/popup-closed-by-user') {
+      console.error('Firebase Auth Sign-In Error:', err);
+      const code = err.code || '';
+      setErrorCode(code);
+
+      if (code === 'auth/unauthorized-domain') {
+        setErrorMessage(
+          `โดเมนปัจจุบัน (${currentHost}) ยังไม่ได้รับอนุญาตใน Firebase Authentication (Authorized Domains)`
+        );
+      } else if (code === 'auth/popup-blocked') {
+        setErrorMessage(
+          'เบราว์เซอร์บล็อกหน้าต่างป๊อปอัป กรุณาอนุญาตป๊อปอัป หรือเลือกเข้าสู่ระบบด้วยวิธีเปลี่ยนหน้า (Redirect)'
+        );
+      } else if (code === 'auth/popup-closed-by-user') {
         setErrorMessage('คุณได้ปิดหน้าต่างเข้าสู่ระบบก่อนดำเนินการเสร็จสิ้น');
-      } else if (err.code === 'auth/cancelled-popup-request') {
+      } else if (code === 'auth/cancelled-popup-request') {
         // Ignored
       } else {
         setErrorMessage(err.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบด้วย Google');
@@ -54,21 +83,43 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
   };
 
+  const handleGoogleRedirect = async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      await signInWithGoogleRedirect();
+    } catch (err: any) {
+      console.error('Firebase Auth Redirect Error:', err);
+      setErrorCode(err.code || '');
+      setErrorMessage(err.message || 'ไม่สามารถเริ่มการเข้าสู่ระบบแบบ Redirect ได้');
+      setIsLoading(false);
+    }
+  };
+
+  const handleCopyCurrentDomain = () => {
+    if (navigator?.clipboard && currentHost) {
+      navigator.clipboard.writeText(currentHost);
+      setCopiedDomain(true);
+      onShowToast(`คัดลอกโดเมน ${currentHost} แล้ว`);
+      setTimeout(() => setCopiedDomain(false), 3000);
+    }
+  };
+
   const handleDemoSignIn = () => {
     // Quick guest or school student login fallback for testing
     onLoginSuccess({
-      displayName: 'Praew Kanya',
+      displayName: 'Praew Kanya (บัญชีนักเรียน)',
       email: 'praew.k@rajinibon.ac.th',
       photoURL: null,
       uid: 'demo-student-rb-01',
     });
-    onShowToast('เข้าสู่ระบบในฐานะสมาชิกชมรม (บัญชีโรงเรียน)');
+    onShowToast('เข้าสู่ระบบในฐานะสมาชิกชมรม (บัญชีนักเรียนจำลอง)');
     onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200 border border-purple-100">
+      <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200 border border-purple-100 max-h-[90vh] overflow-y-auto">
         {/* Top bar with close button */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -99,29 +150,84 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             เข้าสู่ระบบด้วย Gmail
           </h2>
           <p className="text-xs text-gray-500 mt-1 leading-relaxed px-2">
-            เข้าสู่ระบบด้วยบัญชี Google เพื่อส่งภาพถ่ายภารกิจ สะสมเหรียญตรา และบันทึกคะแนน XP ลงในโปรไฟล์ของคุณ
+            เข้าสู่ระบบด้วยบัญชี Google หรืออีเมลโรงเรียน (@rajinibon.ac.th) เพื่อบันทึกผลงาน สะสมเหรียญตรา และรับคะแนน XP
           </p>
         </div>
 
-        {/* Error message if any */}
+        {/* In-Iframe Advisory Banner */}
+        {inIframe && (
+          <div className="bg-purple-50/70 border border-purple-100 rounded-2xl p-2.5 flex items-center gap-2 text-[11px] text-purple-800">
+            <span className="material-symbols-outlined text-[16px] text-purple-600 shrink-0">info</span>
+            <span className="flex-1">
+              กำลังรันใน iFrame Preview หากพบบล็อกป๊อปอัป สามารถเปิดในแท็บใหม่เพื่อล็อกอินได้
+            </span>
+          </div>
+        )}
+
+        {/* Error message card */}
         {errorMessage && (
-          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-3 flex items-start gap-2 text-rose-700 text-xs">
-            <span className="material-symbols-outlined text-[18px] shrink-0 mt-0.5">error</span>
-            <div className="flex-1">
-              <p className="font-semibold">{errorMessage}</p>
-              <button
-                onClick={() => window.open(window.location.href, '_blank')}
-                className="mt-1.5 text-[11px] font-bold underline hover:text-rose-900 block"
-              >
-                เปิดแอปในแท็บใหม่ (แนะนำสำหรับ iFrame)
-              </button>
+          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-3 flex flex-col gap-2 text-rose-700 text-xs">
+            <div className="flex items-start gap-2">
+              <span className="material-symbols-outlined text-[18px] shrink-0 mt-0.5">error</span>
+              <div className="flex-1">
+                <p className="font-bold">{errorMessage}</p>
+              </div>
             </div>
+
+            {/* Special Diagnosis & Actions for auth/unauthorized-domain */}
+            {errorCode === 'auth/unauthorized-domain' && (
+              <div className="mt-1 pt-2 border-t border-rose-200/80 flex flex-col gap-1.5 text-[11px] text-rose-800">
+                <p className="leading-snug">
+                  💡 <strong>แนวทางแก้ไข:</strong>
+                </p>
+                <div className="space-y-1">
+                  <a
+                    href={VERCEL_PROD_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-2 rounded-xl bg-white border border-rose-300 font-bold text-purple-700 hover:bg-purple-50 transition-colors"
+                  >
+                    <span className="flex items-center gap-1.5 truncate">
+                      <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+                      <span>เปิดบน Vercel Production</span>
+                    </span>
+                    <span className="text-[10px] bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded-md shrink-0">
+                      แนะนำ
+                    </span>
+                  </a>
+
+                  <button
+                    onClick={handleCopyCurrentDomain}
+                    type="button"
+                    className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-rose-100/70 hover:bg-rose-200 text-rose-800 font-medium transition-colors text-[11px]"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">
+                      {copiedDomain ? 'check' : 'content_copy'}
+                    </span>
+                    <span>
+                      {copiedDomain
+                        ? 'คัดลอกโดเมนเรียบร้อยแล้ว!'
+                        : `คัดลอก "${currentHost}" เพื่อใส่ใน Firebase`}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {errorCode === 'auth/popup-blocked' && (
+              <button
+                onClick={handleGoogleRedirect}
+                className="mt-1 text-[11px] font-bold text-rose-800 underline text-left hover:text-rose-950"
+              >
+                คลิกที่นี่เพื่อเข้าสู่ระบบด้วยวิธี Redirect แทน
+              </button>
+            )}
           </div>
         )}
 
         {/* Action Buttons */}
         <div className="space-y-2.5 pt-1">
-          {/* Main Google Button */}
+          {/* Main Google Popup Button */}
           <button
             onClick={handleGoogleSignIn}
             disabled={isLoading}
@@ -158,6 +264,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             )}
           </button>
 
+          {/* Direct link to open Vercel if in preview */}
+          {inIframe && (
+            <a
+              href={VERCEL_PROD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-2 px-3 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-[11px] flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[15px]">launch</span>
+              <span>เปิดบน Vercel Production</span>
+            </a>
+          )}
+
           {/* School Demo Account Fallback */}
           <button
             onClick={handleDemoSignIn}
@@ -171,10 +290,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         {/* Privacy Note */}
         <div className="pt-2 border-t border-gray-100 text-center">
           <p className="text-[10px] text-gray-400">
-            ปลอดภัยสำหรับนักเรียน • ใช้การยืนยันตัวตนผ่าน Firebase Authentication
+            ปลอดภัยสำหรับนักเรียน • Firebase Project: rb-shutter-club-01
           </p>
         </div>
       </div>
     </div>
   );
 };
+
