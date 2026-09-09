@@ -16,7 +16,12 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, uploadString, getDownloadURL } from 'firebase/storage';
 import { db, storage } from './firebase';
-import { addXP } from './userService';
+import { addXP, FirestoreUser } from './userService';
+import {
+  computeStreakUpdate,
+  checkAndAwardBadges,
+  BadgeDocument,
+} from './gamificationService';
 
 export type ChallengeCategory =
   | 'Shape Hunt'
@@ -526,7 +531,13 @@ export async function approveSubmission(
   submissionId: string,
   reviewerUid: string,
   reviewerName: string = 'อาจารย์ที่ปรึกษา'
-): Promise<{ success: boolean; xpAwarded: number; message: string }> {
+): Promise<{
+  success: boolean;
+  xpAwarded: number;
+  message: string;
+  unlockedBadges?: BadgeDocument[];
+  newStreak?: number;
+}> {
   const submissionRef = doc(db, 'submissions', submissionId);
 
   // 1. Fetch submission data
@@ -583,12 +594,15 @@ export async function approveSubmission(
     'challenge_submission'
   );
 
-  // 6. Increment user stats safely
+  // 6. Update user stats: photoCount, completedChallenges, streak & longestStreak
+  let currentStreakResult = 1;
   try {
     const userDocRef = doc(db, 'users', sub.userId);
     const userSnap = await getDoc(userDocRef);
 
     if (userSnap.exists()) {
+      const userData = userSnap.data() as FirestoreUser;
+
       // Check if user has already completed this challenge before
       const completedQuery = query(
         collection(db, 'submissions'),
@@ -599,17 +613,36 @@ export async function approveSubmission(
       const completedSnap = await getDocs(completedQuery);
       const isFirstCompletion = completedSnap.size <= 1; // including current one
 
+      // Compute streak update
+      const streakInfo = computeStreakUpdate(
+        userData.lastChallengeDate,
+        userData.currentStreak || 0,
+        userData.longestStreak || 0
+      );
+      currentStreakResult = streakInfo.newStreak;
+
       await updateDoc(userDocRef, {
         photoCount: increment(1),
         completedChallenges: isFirstCompletion ? increment(1) : increment(0),
+        currentStreak: streakInfo.newStreak,
+        longestStreak: streakInfo.newLongestStreak,
+        lastChallengeDate: streakInfo.todayStr,
         updatedAt: serverTimestamp(),
       });
     }
   } catch (e) {
-    console.warn('Could not update user photo/challenge count:', e);
+    console.warn('Could not update user stats & streak:', e);
   }
 
-  // 7. If visibility is 'club', publish to photos collection (Community Gallery)
+  // 7. Check and award any earned badges automatically
+  let newlyEarnedBadges: BadgeDocument[] = [];
+  try {
+    newlyEarnedBadges = await checkAndAwardBadges(sub.userId);
+  } catch (e) {
+    console.warn('Could not check and award badges:', e);
+  }
+
+  // 8. If visibility is 'club', publish to photos collection (Community Gallery)
   if (sub.visibility === 'club') {
     try {
       const photoDocRef = doc(db, 'photos', `approved_${sub.id}`);
@@ -645,10 +678,17 @@ export async function approveSubmission(
     }
   }
 
+  let badgeMsg = '';
+  if (newlyEarnedBadges.length > 0) {
+    badgeMsg = ` พร้อมปลดล็อก ${newlyEarnedBadges.map((b) => b.nameEn).join(', ')} 🏆`;
+  }
+
   return {
     success: true,
     xpAwarded: pointsToAward,
-    message: `อนุมัติผลงานเรียบร้อยแล้ว (+${pointsToAward} XP)`,
+    message: `อนุมัติผลงานเรียบร้อยแล้ว (+${pointsToAward} XP • สตรีค ${currentStreakResult} วัน)${badgeMsg}`,
+    unlockedBadges: newlyEarnedBadges,
+    newStreak: currentStreakResult,
   };
 }
 

@@ -32,15 +32,15 @@ service cloud.firestore {
 
       // Update rules:
       // 1. Teacher/Admin can edit any fields
-      // 2. Member can edit their profile (bio, cameraGear, etc.) but NEVER role, xp, or level
+      // 2. Member can edit their profile (bio, cameraGear, etc.) but NEVER role, xp, level, or stats
       // 3. Member can execute verified XP increment transactions
       allow update: if isTeacherOrAdmin() || (
         isOwner(userId) && (
-          // Case A: Profile info update (no role, xp, or level changes)
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'xp', 'level']) ||
+          // Case A: Profile info update (no role, xp, level, streak, or gamification changes)
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'xp', 'level', 'currentStreak', 'longestStreak', 'lastChallengeDate', 'badgeCount', 'completedChallenges']) ||
           // Case B: Verified Atomic XP transaction (xp only increases, role remains unchanged)
           (
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['xp', 'level', 'updatedAt', 'completedChallenges', 'photoCount', 'badgeCount', 'currentStreak']) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['xp', 'level', 'updatedAt', 'completedChallenges', 'photoCount', 'badgeCount', 'currentStreak', 'longestStreak', 'lastChallengeDate']) &&
             request.resource.data.xp >= resource.data.xp &&
             request.resource.data.role == resource.data.role
           )
@@ -116,6 +116,19 @@ service cloud.firestore {
       // Only teacher/admin can approve, reject, or edit submissions
       allow update: if isTeacherOrAdmin();
       allow delete: if isTeacherOrAdmin();
+    }
+
+    // Badges definitions
+    match /badges/{badgeId} {
+      allow read: if true;
+      allow write: if isTeacherOrAdmin();
+    }
+
+    // User Badges unlocked by members
+    match /userBadges/{userBadgeId} {
+      allow read: if true;
+      // Creation/Update strictly authorized for teachers/admins during submission review or verified system flows
+      allow create, update, delete: if isTeacherOrAdmin();
     }
 
     // Fallback catch-all

@@ -53,6 +53,8 @@ import { NotificationsView } from './components/NotificationsView';
 import { SettingsView } from './components/SettingsView';
 import { ProfileView } from './components/ProfileView';
 import { LoginModal } from './components/LoginModal';
+import { BadgeUnlockModal } from './components/BadgeUnlockModal';
+import { BadgeDocument } from './lib/gamificationService';
 import { Toast } from './components/Toast';
 
 export default function App() {
@@ -77,6 +79,31 @@ export default function App() {
   const [isMissionCompleteOpen, setIsMissionCompleteOpen] = useState(false);
   const [lastSubmittedPhoto, setLastSubmittedPhoto] = useState<Partial<PhotoItem> | undefined>(undefined);
   const [selectedDetailPhoto, setSelectedDetailPhoto] = useState<PhotoItem | null>(null);
+
+  // Badge Unlock Modal State
+  const [unlockedBadgeQueue, setUnlockedBadgeQueue] = useState<BadgeDocument[]>([]);
+  const [currentUnlockedBadge, setCurrentUnlockedBadge] = useState<BadgeDocument | null>(null);
+
+  const triggerBadgeUnlock = (badges: BadgeDocument[]) => {
+    if (!badges || badges.length === 0) return;
+    if (!currentUnlockedBadge) {
+      setCurrentUnlockedBadge(badges[0]);
+      setUnlockedBadgeQueue(badges.slice(1));
+    } else {
+      setUnlockedBadgeQueue((prev) => [...prev, ...badges]);
+    }
+  };
+
+  const handleCloseBadgeModal = () => {
+    setCurrentUnlockedBadge(null);
+    if (unlockedBadgeQueue.length > 0) {
+      const next = unlockedBadgeQueue[0];
+      setUnlockedBadgeQueue((prev) => prev.slice(1));
+      setTimeout(() => {
+        setCurrentUnlockedBadge(next);
+      }, 250);
+    }
+  };
 
   // Toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -137,6 +164,11 @@ export default function App() {
           typeof firestoreUser.currentStreak === 'number'
             ? firestoreUser.currentStreak
             : prev.currentStreak,
+        longestStreak:
+          typeof firestoreUser.longestStreak === 'number'
+            ? firestoreUser.longestStreak
+            : prev.longestStreak,
+        lastChallengeDate: firestoreUser.lastChallengeDate || prev.lastChallengeDate,
       }));
     } catch (err) {
       console.error('Error syncing user on auth:', err);
@@ -211,6 +243,11 @@ export default function App() {
           typeof freshUser.currentStreak === 'number'
             ? freshUser.currentStreak
             : prev.currentStreak,
+        longestStreak:
+          typeof freshUser.longestStreak === 'number'
+            ? freshUser.longestStreak
+            : prev.longestStreak,
+        lastChallengeDate: freshUser.lastChallengeDate || prev.lastChallengeDate,
         grade: freshUser.grade || prev.grade,
         room: freshUser.room || prev.room,
         cameraGear: freshUser.cameraGear || prev.cameraGear,
@@ -770,8 +807,16 @@ export default function App() {
         <ReviewSubmissionsModal
           isOpen={isReviewModalOpen}
           onClose={() => setIsReviewModalOpen(false)}
-          currentUserId={user.uid}
+          submissions={submissions}
+          currentUser={user}
           onShowToast={showToast}
+          onBadgeUnlocked={(badges) => triggerBadgeUnlock(badges)}
+        />
+
+        <BadgeUnlockModal
+          badge={currentUnlockedBadge}
+          onClose={handleCloseBadgeModal}
+          onShare={() => showToast('แชร์เหรียญรางวัลลงโปรไฟล์สำเร็จ!')}
         />
 
         <MissionCompleteModal

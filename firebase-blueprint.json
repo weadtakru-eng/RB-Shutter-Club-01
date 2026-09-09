@@ -176,6 +176,33 @@
         "points": { "type": "number" }
       },
       "required": ["id", "userId", "challengeId", "imageURL", "status"]
+    },
+    "Badge": {
+      "title": "Badge",
+      "description": "Gamification achievement badges definitions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "icon": { "type": "string" },
+        "category": { "type": "string" },
+        "requirement": { "type": "string" },
+        "xpBonus": { "type": "number" }
+      },
+      "required": ["id", "name", "description", "icon", "requirement"]
+    },
+    "UserBadge": {
+      "title": "UserBadge",
+      "description": "Badges earned by club members",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "badgeId": { "type": "string" },
+        "earnedAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "badgeId"]
     }
   },
   "firestore": {
@@ -214,6 +241,18 @@
         "$ref": "#/entities/Photo"
       },
       "description": "Submitted club photos"
+    },
+    "/badges/{badgeId}": {
+      "schema": {
+        "$ref": "#/entities/Badge"
+      },
+      "description": "Standard badges and achievements"
+    },
+    "/userBadges/{userBadgeId}": {
+      "schema": {
+        "$ref": "#/entities/UserBadge"
+      },
+      "description": "Badges unlocked by students"
     }
   }
 }

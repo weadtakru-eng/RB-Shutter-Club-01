@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SubmissionDocument, approveSubmission, rejectSubmission } from '../lib/challengeService';
+import { BadgeDocument } from '../lib/gamificationService';
 import { UserProfile } from '../types';
 
 interface ReviewSubmissionsModalProps {
@@ -8,6 +9,7 @@ interface ReviewSubmissionsModalProps {
   submissions: SubmissionDocument[];
   currentUser: UserProfile;
   onShowToast: (msg: string) => void;
+  onBadgeUnlocked?: (badges: BadgeDocument[], studentName: string) => void;
 }
 
 export const ReviewSubmissionsModal: React.FC<ReviewSubmissionsModalProps> = ({
@@ -16,6 +18,7 @@ export const ReviewSubmissionsModal: React.FC<ReviewSubmissionsModalProps> = ({
   submissions,
   currentUser,
   onShowToast,
+  onBadgeUnlocked,
 }) => {
   const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -44,7 +47,17 @@ export const ReviewSubmissionsModal: React.FC<ReviewSubmissionsModalProps> = ({
         currentUser.name || 'อาจารย์ที่ปรึกษา'
       );
       if (result.success) {
-        onShowToast(`อนุมัติผลงานของ ${sub.studentName} สำเร็จ (+${result.xpAwarded} XP)`);
+        let toastMsg = `อนุมัติผลงานของ ${sub.studentName} สำเร็จ (+${result.xpAwarded} XP)`;
+        if (result.newStreak && result.newStreak > 1) {
+          toastMsg += ` • สตรีค ${result.newStreak} วัน 🔥`;
+        }
+        if (result.unlockedBadges && result.unlockedBadges.length > 0) {
+          toastMsg += ` • ปลดล็อก ${result.unlockedBadges.length} เหรียญตรา! 🏅`;
+          if (onBadgeUnlocked) {
+            onBadgeUnlocked(result.unlockedBadges, sub.studentName);
+          }
+        }
+        onShowToast(toastMsg);
       } else {
         onShowToast(result.message);
       }

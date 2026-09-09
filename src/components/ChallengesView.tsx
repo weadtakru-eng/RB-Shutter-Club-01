@@ -59,47 +59,111 @@ export const ChallengesView: React.FC<ChallengesViewProps> = ({
     onShowToast('ส่งไอเดียภารกิจใหม่ให้อาจารย์ที่ปรึกษาแล้ว! (+20 XP)');
   };
 
+  // Gamification & Streak calculations
+  const currentStreak = user.currentStreak || 0;
+  let nextStreakTarget = 3;
+  let nextStreakBadgeName = 'Bronze Streak';
+
+  if (currentStreak < 3) {
+    nextStreakTarget = 3;
+    nextStreakBadgeName = 'Bronze Streak';
+  } else if (currentStreak < 7) {
+    nextStreakTarget = 7;
+    nextStreakBadgeName = 'Challenge Streak';
+  } else if (currentStreak < 14) {
+    nextStreakTarget = 14;
+    nextStreakBadgeName = 'Photography Dedication';
+  } else if (currentStreak < 30) {
+    nextStreakTarget = 30;
+    nextStreakBadgeName = 'Shutter Legend';
+  } else {
+    nextStreakTarget = currentStreak + 5;
+    nextStreakBadgeName = 'Grand Shutter Master';
+  }
+  const daysUntilNextBadge = Math.max(1, nextStreakTarget - currentStreak);
+
   return (
     <div className="flex flex-col w-full pb-24 px-4 space-y-5 pt-3">
       {/* Season & Streak Banner (Tactile Glow Card) */}
-      <div className="w-full bg-white rounded-2xl p-4 shadow-sm border border-purple-50 flex items-center justify-between relative overflow-hidden">
+      <div className="w-full bg-white rounded-2xl p-4 shadow-sm border border-purple-50 flex flex-col gap-3 relative overflow-hidden">
         <div className="absolute -right-8 -bottom-8 w-28 h-28 rounded-full bg-purple-200/40 blur-2xl pointer-events-none"></div>
-        <div className="flex items-center gap-3 z-10">
-          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0 shadow-sm text-amber-700">
-            <span
-              className="material-symbols-outlined text-[22px]"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              local_fire_department
-            </span>
-          </div>
-          <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[10px] font-bold bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                ซีซัน 2 • ภาคเรียนที่ 2
+        
+        <div className="flex items-center justify-between z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0 shadow-sm text-amber-700">
+              <span
+                className="material-symbols-outlined text-[22px]"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                local_fire_department
               </span>
-              <span className="text-[11px] text-gray-500 font-medium">สัปดาห์ที่ 6</span>
             </div>
-            <div className="flex items-center gap-1 mt-0.5">
-              <span className="text-base font-extrabold text-gray-900 tracking-tight">
-                สตรีคถ่ายภาพ 7 วันต่อเนื่อง
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] font-bold bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  ซีซัน 2 • ภาคเรียนที่ 2
+                </span>
+                <span className="text-[10px] font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full">
+                  🔥 {currentStreak} Day Streak
+                </span>
+                {user.rank && (
+                  <span className="text-[10px] font-bold text-gray-500">
+                    อันดับ #{user.rank}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1 mt-0.5">
+                <span className="text-base font-extrabold text-gray-900 tracking-tight">
+                  สตรีคถ่ายภาพ {currentStreak} วันต่อเนื่อง
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-amber-50 border border-amber-200/70 px-2.5 py-1.5 rounded-full shadow-xs">
+              <span
+                className="material-symbols-outlined text-amber-600 text-[16px]"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                stars
               </span>
+              <span className="text-xs text-amber-900 font-extrabold">
+                {user.currentXP} XP
+              </span>
+            </div>
+            <div
+              className="w-8 h-8 rounded-full bg-purple-50 text-purple-700 border border-purple-100 flex items-center justify-center font-black text-xs shadow-xs"
+              title={`Level ${user.level} ${user.levelTitle}`}
+            >
+              Lv.{user.level}
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 z-10">
-          <div className="flex items-center gap-1 bg-amber-50 border border-amber-200/70 px-2.5 py-1.5 rounded-full shadow-xs">
-            <span
-              className="material-symbols-outlined text-amber-600 text-[16px]"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              stars
+        {/* Level XP Progress & Next Badge Milestone Hint */}
+        <div className="border-t border-purple-50 pt-2.5 flex flex-col gap-1.5 z-10">
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="font-bold text-gray-700 flex items-center gap-1">
+              <span>{user.levelTitle}</span>
+              <span className="text-[10px] text-purple-700 font-extrabold">(Lv.{user.level})</span>
             </span>
-            <span className="text-xs text-amber-900 font-extrabold">1,450 XP</span>
+            <span className="text-gray-500 font-mono text-[10px]">
+              {user.currentXP} / {user.targetXP} XP
+            </span>
           </div>
-          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600">
-            <span className="material-symbols-outlined text-[18px]">workspace_premium</span>
+          <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+            <div
+              className="bg-purple-600 h-full rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, (user.currentXP / (user.targetXP || 1)) * 100)}%` }}
+            ></div>
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-gray-500 mt-0.5">
+            <span className="flex items-center gap-1 text-purple-700 font-semibold">
+              <span className="material-symbols-outlined text-[13px]">military_tech</span>
+              <span>อีก {daysUntilNextBadge} วันจะปลดล็อก "{nextStreakBadgeName}"</span>
+            </span>
+            <span>อีก {Math.max(0, user.targetXP - user.currentXP)} XP สู่เลเวลถัดไป</span>
           </div>
         </div>
       </div>

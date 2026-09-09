@@ -50,9 +50,42 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
     }));
   }, [members, user.uid]);
 
-  const top1 = activeMembers[0] || LEADERBOARD_MEMBERS[0];
-  const top2 = activeMembers[1] || LEADERBOARD_MEMBERS[1];
-  const top3 = activeMembers[2] || LEADERBOARD_MEMBERS[2];
+  const defaultTop1: LeaderboardEntry = {
+    rank: 1,
+    name: 'Praew Kanya',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+    title: 'Visual Alchemist',
+    xp: 2850,
+    level: 7,
+    badgeCount: 5,
+    completedQuests: 8,
+  };
+
+  const defaultTop2: LeaderboardEntry = {
+    rank: 2,
+    name: 'Pimchanok S.',
+    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200',
+    title: 'Color Chaser',
+    xp: 2420,
+    level: 6,
+    badgeCount: 3,
+    completedQuests: 6,
+  };
+
+  const defaultTop3: LeaderboardEntry = {
+    rank: 3,
+    name: 'Natapat W.',
+    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200',
+    title: 'Street Scout',
+    xp: 2190,
+    level: 5,
+    badgeCount: 3,
+    completedQuests: 5,
+  };
+
+  const top1: LeaderboardEntry = activeMembers[0] || defaultTop1;
+  const top2: LeaderboardEntry = activeMembers[1] || defaultTop2;
+  const top3: LeaderboardEntry = activeMembers[2] || defaultTop3;
   const restMembers = activeMembers.slice(3);
 
   return (
@@ -119,9 +152,12 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
           <span className="font-extrabold text-xs text-gray-900 truncate mt-1 w-full text-center">
             {top2.name}
           </span>
-          <span className="text-[10px] text-gray-500 truncate w-full text-center">
-            {top2.title}
-          </span>
+          <div className="flex items-center justify-center gap-1.5 text-[10px] text-gray-500 mt-0.5">
+            <span className="bg-purple-50 text-purple-700 font-bold px-1.5 py-0.2 rounded-md">
+              Lv.{top2.level || 1}
+            </span>
+            <span>🏅 {top2.badgeCount ?? 2}</span>
+          </div>
           <span className="text-xs font-extrabold text-purple-700 mt-1">{top2.xp} XP</span>
         </div>
 
@@ -143,9 +179,12 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
           <span className="font-black text-sm text-gray-900 truncate mt-1 w-full text-center">
             {top1.name}
           </span>
-          <span className="text-[10px] text-purple-700 font-bold truncate w-full text-center">
-            {top1.title}
-          </span>
+          <div className="flex items-center justify-center gap-1.5 text-[10px] text-gray-600 mt-0.5">
+            <span className="bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded-md">
+              Lv.{top1.level || 1}
+            </span>
+            <span>🏅 {top1.badgeCount ?? 4}</span>
+          </div>
           <span className="text-sm font-black text-amber-600 mt-1">{top1.xp} XP</span>
         </div>
 
@@ -164,9 +203,12 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
           <span className="font-extrabold text-xs text-gray-900 truncate mt-1 w-full text-center">
             {top3.name}
           </span>
-          <span className="text-[10px] text-gray-500 truncate w-full text-center">
-            {top3.title}
-          </span>
+          <div className="flex items-center justify-center gap-1.5 text-[10px] text-gray-500 mt-0.5">
+            <span className="bg-purple-50 text-purple-700 font-bold px-1.5 py-0.2 rounded-md">
+              Lv.{top3.level || 1}
+            </span>
+            <span>🏅 {top3.badgeCount ?? 2}</span>
+          </div>
           <span className="text-xs font-extrabold text-purple-700 mt-1">{top3.xp} XP</span>
         </div>
       </div>
@@ -182,11 +224,11 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm">{user.name}</span>
                 <span className="text-[10px] bg-purple-800 text-purple-200 px-2 py-0.2 rounded-full font-semibold">
-                  อันดับ #{user.rank}
+                  อันดับ #{user.rank} • Lv.{user.level}
                 </span>
               </div>
-              <span className="text-xs text-purple-200">
-                {user.currentXP} XP • ต่อเนื่อง 4 วัน
+              <span className="text-xs text-purple-200 mt-0.5">
+                {user.currentXP} XP • สตรีค {user.currentStreak || 0} วัน • 🏅 {user.badgesCount || 0} เหรียญ
               </span>
             </div>
           </div>
@@ -198,14 +240,14 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
           </button>
         </div>
         <p className="text-[11px] text-purple-200/90 leading-relaxed border-t border-purple-800/80 pt-2">
-          ตามหลังอันดับ #6 (น้องพลอย) เพียง <span className="font-bold text-white">45 XP</span>! พิชิตภารกิจล่าสีสันวันนี้เพื่อเลื่อนอันดับ
+          พิชิตภารกิจสัปดาห์นี้เพื่อรับ XP เพิ่มเติมและไต่อันดับสู่ท็อปช่างภาพ!
         </p>
       </div>
 
       {/* Rankings List */}
       <div className="flex flex-col bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 divide-y divide-gray-100">
         <div className="px-4 py-2.5 bg-gray-50 flex items-center justify-between text-[11px] font-bold text-gray-500">
-          <span>ช่างภาพร่วมกิจกรรม (32 คน)</span>
+          <span>ช่างภาพร่วมกิจกรรม ({activeMembers.length} คน)</span>
           <span>คะแนน XP</span>
         </div>
 
@@ -213,7 +255,9 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
           <div
             key={member.rank}
             className={`px-4 py-3 flex items-center justify-between transition-colors ${
-              member.isYou ? 'bg-purple-50/60' : 'hover:bg-gray-50'
+              member.isYou
+                ? 'bg-purple-50/90 border-l-4 border-purple-600 ring-1 ring-purple-200'
+                : 'hover:bg-gray-50'
             }`}
           >
             <div className="flex items-center gap-3 min-w-0">
@@ -237,7 +281,13 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                   )}
                   <span className="text-[10px] text-gray-400">({member.grade})</span>
                 </div>
-                <span className="text-[10px] text-gray-500 truncate">{member.title}</span>
+                <div className="flex items-center gap-2 text-[10px] text-gray-500 mt-0.5">
+                  <span className="bg-purple-50 text-purple-700 font-bold px-1.5 py-0.2 rounded-md">
+                    Lv.{member.level || 1}
+                  </span>
+                  <span>🏅 {member.badgeCount ?? 1}</span>
+                  <span>🎯 {member.completedQuests ?? 0}</span>
+                </div>
               </div>
             </div>
 

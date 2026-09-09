@@ -1,6 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { PhotoItem, UserProfile, ActiveTab } from '../types';
 import { INITIAL_BADGES } from '../data/mockData';
+import {
+  subscribeToBadges,
+  subscribeToUserBadges,
+  BadgeDocument,
+  UserBadgeDocument,
+  SEED_BADGES,
+} from '../lib/gamificationService';
 
 interface ProfileViewProps {
   user: UserProfile;
@@ -29,7 +36,52 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const [editBio, setEditBio] = useState(user.bio);
   const [editGear, setEditGear] = useState(user.cameraGear);
 
-  const myPhotos = photos.filter((p) => p.authorName === 'Praew Kanya' || p.authorName === 'Praew K.');
+  const [firestoreBadges, setFirestoreBadges] = useState<BadgeDocument[]>(SEED_BADGES as BadgeDocument[]);
+  const [userBadges, setUserBadges] = useState<UserBadgeDocument[]>([]);
+
+  useEffect(() => {
+    const unsub = subscribeToBadges((list) => {
+      if (list && list.length > 0) setFirestoreBadges(list);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (!user.uid) {
+      setUserBadges([]);
+      return;
+    }
+    const unsub = subscribeToUserBadges(user.uid, (list) => {
+      setUserBadges(list);
+    });
+    return () => unsub();
+  }, [user.uid]);
+
+  const earnedBadgeIds = useMemo(() => new Set(userBadges.map((b) => b.badgeId)), [userBadges]);
+
+  const earnedBadges = useMemo(
+    () => firestoreBadges.filter((b) => earnedBadgeIds.has(b.id)),
+    [firestoreBadges, earnedBadgeIds]
+  );
+
+  const lockedBadges = useMemo(
+    () => firestoreBadges.filter((b) => !earnedBadgeIds.has(b.id)),
+    [firestoreBadges, earnedBadgeIds]
+  );
+
+  const earnedBonusXP = useMemo(
+    () => earnedBadges.reduce((sum, b) => sum + (b.xpBonus || 0), 0),
+    [earnedBadges]
+  );
+
+  const myPhotos = photos.filter(
+    (p) =>
+      (user.uid && p.authorId === user.uid) ||
+      p.authorName === user.name ||
+      p.authorName === user.thaiName ||
+      p.authorName === 'Praew Kanya' ||
+      p.authorName === 'Praew K.'
+  );
 
   const displayedPhotos = myPhotos.filter((p) => {
     if (photoFilter === 'picks') return p.isMentorPick;
@@ -212,7 +264,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           onClick={() => setProfileSubTab('photos')}
           className="bg-white rounded-2xl p-2.5 border border-gray-100 shadow-xs flex flex-col items-center cursor-pointer hover:border-purple-200 transition-colors"
         >
-          <span className="text-sm font-black text-gray-900">{myPhotos.length}</span>
+          <span className="text-sm font-black text-gray-900">{user.photosCount || myPhotos.length}</span>
           <span className="text-[10px] font-bold text-gray-600 mt-0.5">ภาพถ่าย</span>
           <span className="text-[8px] text-emerald-600">เผยแพร่</span>
         </div>
@@ -225,17 +277,50 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             {user.questsCompleted}/{user.questsTotal}
           </span>
           <span className="text-[10px] font-bold text-gray-600 mt-0.5">ภารกิจ</span>
-          <span className="text-[8px] text-purple-600">สำเร็จ 75%</span>
+          <span className="text-[8px] text-purple-600">สำเร็จแล้ว</span>
         </div>
 
         <div
           onClick={() => onNavigate('achievements')}
           className="bg-white rounded-2xl p-2.5 border border-gray-100 shadow-xs flex flex-col items-center cursor-pointer hover:border-purple-200 transition-colors"
         >
-          <span className="text-sm font-black text-amber-600">{user.badgesCount}</span>
+          <span className="text-sm font-black text-amber-600">{earnedBadges.length || user.badgesCount}</span>
           <span className="text-[10px] font-bold text-gray-600 mt-0.5">เหรียญ</span>
-          <span className="text-[8px] text-amber-700">+320 XP</span>
+          <span className="text-[8px] text-amber-700">+{earnedBonusXP} XP</span>
         </div>
+      </div>
+
+      {/* Streak & Consistency Showcase Card */}
+      <div className="bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-indigo-500/10 border border-amber-200/80 rounded-2xl p-3.5 flex items-center justify-between shadow-2xs">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs shrink-0">
+            <span
+              className="material-symbols-outlined text-[24px]"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              local_fire_department
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-sm font-black text-gray-900">
+                สตรีค {user.currentStreak || 0} วันต่อเนื่อง
+              </span>
+              <span className="text-[10px] bg-amber-100 text-amber-900 font-bold px-1.5 py-0.2 rounded-full">
+                Active Streak
+              </span>
+            </div>
+            <span className="text-[11px] text-gray-600 font-medium mt-0.5">
+              สถิติต่อเนื่องสูงสุด: <span className="font-bold text-purple-700">{user.longestStreak || user.currentStreak || 0} วัน</span>
+            </span>
+          </div>
+        </div>
+        <button
+          onClick={() => onNavigate('challenges')}
+          className="px-3 py-1.5 rounded-full bg-white hover:bg-gray-50 border border-amber-200 text-amber-900 text-xs font-bold transition-all shadow-2xs shrink-0 active:scale-95"
+        >
+          รักษา สตรีค
+        </button>
       </div>
 
       {/* Profile Sub Tabs */}
@@ -258,7 +343,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               : 'text-gray-500'
           }`}
         >
-          เหรียญรางวัล ({user.badgesCount})
+          เหรียญรางวัล ({earnedBadges.length || user.badgesCount})
         </button>
         <button
           onClick={() => setProfileSubTab('quests')}
@@ -350,41 +435,118 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
       {/* Sub Tab: Badges */}
       {profileSubTab === 'badges' && (
-        <div className="space-y-3">
-          {INITIAL_BADGES.slice(0, 3).map((badge) => (
-            <div
-              key={badge.id}
-              className="bg-white rounded-2xl p-3.5 border border-gray-100 shadow-xs flex items-center gap-3"
-            >
-              <div
-                className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${badge.accentGradient} flex items-center justify-center shrink-0 ${badge.iconColor}`}
-              >
+        <div className="space-y-4">
+          {/* Section: Badges ที่ได้รับ (Earned) */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-gray-900 flex items-center gap-1">
                 <span
-                  className="material-symbols-outlined text-[24px]"
+                  className="material-symbols-outlined text-[16px] text-amber-500"
                   style={{ fontVariationSettings: "'FILL' 1" }}
                 >
-                  {badge.icon}
+                  military_tech
                 </span>
-              </div>
-              <div className="flex flex-col flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-xs text-gray-900">{badge.name}</h4>
-                  <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.2 rounded-full">
-                    +{badge.xp} XP
-                  </span>
-                </div>
-                <p className="text-[11px] text-gray-500 mt-0.5">{badge.description}</p>
-                <span className="text-[10px] text-emerald-700 font-bold mt-1">
-                  {badge.completedDate || 'ได้รับแล้ว'}
-                </span>
-              </div>
+                เหรียญรางวัลที่ได้รับ ({earnedBadges.length})
+              </span>
+              <span className="text-[10px] text-purple-700 font-bold">
+                รวม +{earnedBonusXP} XP
+              </span>
             </div>
-          ))}
+
+            {earnedBadges.length === 0 ? (
+              <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100/60 text-center">
+                <p className="text-xs text-purple-900 font-bold">ยังไม่มีเหรียญรางวัล</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  ส่งผลงานภาพถ่ายภารกิจเพื่อปลดล็อกเหรียญตราแรก!
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {earnedBadges.map((badge) => (
+                  <div
+                    key={badge.id}
+                    className="bg-white rounded-2xl p-3.5 border border-purple-100 shadow-xs flex items-center gap-3"
+                  >
+                    <div
+                      className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${badge.accentGradient || 'from-purple-100 to-indigo-100'} flex items-center justify-center shrink-0 ${badge.iconColor || 'text-purple-600'} ring-2 ring-purple-100`}
+                    >
+                      <span
+                        className="material-symbols-outlined text-[24px]"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
+                        {badge.icon}
+                      </span>
+                    </div>
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold text-xs text-gray-900">{badge.name}</h4>
+                        <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.2 rounded-full">
+                          +{badge.xpBonus} XP
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 mt-0.5">{badge.description}</p>
+                      <span className="text-[10px] text-emerald-700 font-bold mt-1 flex items-center gap-1">
+                        <span
+                          className="material-symbols-outlined text-[13px]"
+                          style={{ fontVariationSettings: "'FILL' 1" }}
+                        >
+                          check_circle
+                        </span>
+                        ปลดล็อกแล้ว
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Section: Badges ที่ยังไม่ได้ (Locked พร้อม Requirement) */}
+          <div className="space-y-2.5 pt-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-gray-900 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[16px] text-gray-400">
+                  lock
+                </span>
+                เหรียญตราที่รอการปลดล็อก ({lockedBadges.length})
+              </span>
+              <span className="text-[10px] text-gray-400 font-medium">เงื่อนไขความสำเร็จ</span>
+            </div>
+
+            <div className="space-y-2.5">
+              {lockedBadges.slice(0, 5).map((badge) => (
+                <div
+                  key={badge.id}
+                  className="bg-gray-50/80 rounded-2xl p-3 border border-gray-200/70 shadow-2xs flex items-center gap-3"
+                >
+                  <div className="w-11 h-11 rounded-2xl bg-gray-200/80 text-gray-400 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-[22px]">
+                      {badge.icon}
+                    </span>
+                  </div>
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-xs text-gray-700">{badge.name}</h4>
+                      <span className="text-[10px] font-bold text-gray-500 bg-white border border-gray-200 px-1.5 py-0.2 rounded-full">
+                        +{badge.xpBonus} XP
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-500 mt-0.5 truncate">{badge.description}</p>
+                    <div className="mt-1 flex items-center gap-1 text-[10px] text-purple-700 bg-purple-50/90 px-2 py-0.5 rounded-md font-semibold border border-purple-100/80">
+                      <span className="material-symbols-outlined text-[12px]">flag</span>
+                      <span className="truncate">เงื่อนไข: {badge.requirement}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <button
             onClick={() => onNavigate('achievements')}
             className="w-full py-2.5 rounded-xl bg-purple-50 text-purple-800 font-bold text-xs hover:bg-purple-100 transition-colors"
           >
-            ดูเหรียญรางวัลทั้งหมดในหอเกียรติยศ
+            ดูเหรียญรางวัลทั้งหมดในหอเกียรติยศ ({firestoreBadges.length} เหรียญ)
           </button>
         </div>
       )}

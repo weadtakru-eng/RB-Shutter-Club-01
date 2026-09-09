@@ -27,6 +27,8 @@ export interface FirestoreUser {
   photoCount: number;
   badgeCount: number;
   currentStreak: number;
+  longestStreak?: number;
+  lastChallengeDate?: string | null;
   createdAt?: any;
   updatedAt?: any;
   thaiName?: string;
@@ -56,6 +58,7 @@ export interface LeaderboardEntry {
   xp: number;
   level: number;
   completedQuests?: number;
+  badgeCount?: number;
   change?: string;
   avatar: string;
   isYou?: boolean;
@@ -250,6 +253,8 @@ export async function syncUserOnAuth(googleUser: {
         photoCount: 0,
         badgeCount: 0,
         currentStreak: 0,
+        longestStreak: 0,
+        lastChallengeDate: null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         thaiName: googleUser.displayName || 'สมาชิกชมรม',
@@ -485,6 +490,7 @@ export function subscribeToLeaderboard(
             xp: userXp,
             level: userLevel,
             completedQuests: u.completedChallenges || 0,
+            badgeCount: u.badgeCount || 0,
             avatar:
               u.photoURL ||
               `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(

@@ -143,4 +143,6 @@ export interface UserProfile {
   questsTotal: number;
   badgesCount: number;
   currentStreak?: number;
+  longestStreak?: number;
+  lastChallengeDate?: string | null;
 }
